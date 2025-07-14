@@ -65,18 +65,18 @@ const generateGroundedResponseFlow = ai.defineFlow(
         tools: [grounding_tool]
     };
 
-    const {output, groundingMetadata} = await ai.generate({
+    const response = await ai.generate({
         model: 'googleai/gemini-2.5-flash',
         prompt: input.query,
         config
     });
 
     return {
-      response: output!.response,
-      webSearchQueries: groundingMetadata?.webSearchQueries,
-      searchEntryPoint: groundingMetadata?.searchEntryPoint,
-      groundingChunks: groundingMetadata?.groundingChunks,
-      groundingSupports: groundingMetadata?.groundingSupports
+      response: response.text,
+      webSearchQueries: response.groundingMetadata?.webSearchQueries,
+      searchEntryPoint: response.groundingMetadata?.searchEntryPoint,
+      groundingChunks: response.groundingMetadata?.groundingChunks,
+      groundingSupports: response.groundingMetadata?.groundingSupports
     };
   }
 );
