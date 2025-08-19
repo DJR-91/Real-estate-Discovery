@@ -21,8 +21,10 @@ interface ResultsDisplayProps {
 }
 
 export function ResultsDisplay({ data }: ResultsDisplayProps) {
-  const { response, groundingSupports, groundingChunks, webSearchQueries } = data;
+  const { response, groundingSupports, groundingChunks, webSearchQueries } =
+    data;
 
+  // Ensure supports are sorted to process the response string in order
   const sortedSupports = [...(groundingSupports || [])].sort(
     (a, b) => a.segment.startIndex - b.segment.startIndex
   );
@@ -30,6 +32,7 @@ export function ResultsDisplay({ data }: ResultsDisplayProps) {
   const segments: React.ReactNode[] = [];
   let lastIndex = 0;
 
+  // Build the response string with tooltips for citations
   sortedSupports.forEach((support, i) => {
     // Add text before this segment
     if (support.segment.startIndex > lastIndex) {
@@ -53,7 +56,7 @@ export function ResultsDisplay({ data }: ResultsDisplayProps) {
             </span>
           </TooltipTrigger>
           <TooltipContent className="max-w-xs" side="top">
-            <p className="font-bold mb-2">Sources:</p>
+            <p className="font-bold mb-2">Cited Sources:</p>
             <ul className="space-y-2">
               {sources.map((source, idx) => (
                 <li key={idx} className="flex items-start gap-2">
@@ -63,6 +66,7 @@ export function ResultsDisplay({ data }: ResultsDisplayProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm hover:underline truncate"
+                    title={source?.web.title}
                   >
                     {source?.web.title}
                   </a>
@@ -77,18 +81,24 @@ export function ResultsDisplay({ data }: ResultsDisplayProps) {
     lastIndex = support.segment.endIndex;
   });
 
+  // Add any remaining text after the last citation
   if (lastIndex < response.length) {
     segments.push(response.substring(lastIndex));
   }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500">
+      {/* Main Response Column */}
       <div className="lg:col-span-2">
-        <Card className="shadow-md h-full">
+        <Card className="shadow-lg h-full border-primary/20">
           <CardHeader>
-            <CardTitle className="font-headline text-3xl">
+            <CardTitle className="font-headline text-3xl text-primary">
               Grounded Response
             </CardTitle>
+            <CardDescription>
+              This answer is grounded by Google Search. Citations are highlighted
+              and linked to sources.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-lg leading-relaxed whitespace-pre-wrap">
@@ -99,17 +109,18 @@ export function ResultsDisplay({ data }: ResultsDisplayProps) {
           </CardContent>
         </Card>
       </div>
-      
+
+      {/* Sidebar with Sources and Queries */}
       <div className="space-y-6">
         {webSearchQueries && webSearchQueries.length > 0 && (
-          <Card>
+          <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Search className="h-5 w-5 text-muted-foreground" />
                 <span>Search Queries</span>
               </CardTitle>
               <CardDescription>
-                The queries Gemini used.
+                The queries Gemini used for grounding.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -129,14 +140,14 @@ export function ResultsDisplay({ data }: ResultsDisplayProps) {
         )}
 
         {groundingChunks && groundingChunks.length > 0 && (
-          <Card>
+          <Card className="shadow-md">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-xl">
                 <Link className="h-5 w-5 text-muted-foreground" />
                 <span>Sources</span>
               </CardTitle>
               <CardDescription>
-                Web pages used for grounding.
+                Web pages used to generate this response.
               </CardDescription>
             </CardHeader>
             <CardContent>
