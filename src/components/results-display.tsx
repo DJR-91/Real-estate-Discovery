@@ -82,32 +82,34 @@ export function ResultsDisplay({ data }: ResultsDisplayProps) {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      <Card className="shadow-md">
-        <CardHeader>
-          <CardTitle className="font-headline text-3xl">
-            Grounded Response
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-lg leading-relaxed whitespace-pre-wrap">
-            {segments.map((segment, index) => (
-              <React.Fragment key={index}>{segment}</React.Fragment>
-            ))}
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500">
+      <div className="lg:col-span-2">
+        <Card className="shadow-md h-full">
+          <CardHeader>
+            <CardTitle className="font-headline text-3xl">
+              Grounded Response
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg leading-relaxed whitespace-pre-wrap">
+              {segments.map((segment, index) => (
+                <React.Fragment key={index}>{segment}</React.Fragment>
+              ))}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <div className="space-y-6">
         {webSearchQueries && webSearchQueries.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <Search className="h-5 w-5 text-muted-foreground" />
-                <span>Model's Search Queries</span>
+                <span>Search Queries</span>
               </CardTitle>
               <CardDescription>
-                The queries Gemini used to find information.
+                The queries Gemini used.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -129,12 +131,12 @@ export function ResultsDisplay({ data }: ResultsDisplayProps) {
         {groundingChunks && groundingChunks.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl">
                 <Link className="h-5 w-5 text-muted-foreground" />
                 <span>Sources</span>
               </CardTitle>
               <CardDescription>
-                The web pages used to ground the response.
+                Web pages used for grounding.
               </CardDescription>
             </CardHeader>
             <CardContent>
