@@ -20,15 +20,16 @@ import {
   generateGroundedResponse,
 } from "@/ai/flows/generate-grounded-response";
 import {
-  generateTravelItinerary,
-} from "@/ai/flows/generate-travel-itinerary";
+  searchYoutubeVideos,
+} from "@/ai/flows/search-youtube-videos";
 import type { GenerateGroundedResponseOutput } from "@/ai/schemas/grounded-response-schema";
-import type { GenerateTravelItineraryOutput } from "@/ai/schemas/travel-itinerary-schema";
+import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-schema";
 import { ResultsDisplay } from "@/components/results-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
 import { LoadingState } from "@/components/loading-state";
 import { Search, Youtube } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { VideoResultDisplay } from "@/components/video-result-display";
 
 const groundedSearchSchema = z.object({
   query: z.string().min(2, {
@@ -36,15 +37,20 @@ const groundedSearchSchema = z.object({
   }),
 });
 
-const itinerarySchema = z.object({
-  url: z.string().url({ message: "Please enter a valid YouTube URL." }),
+const videoSearchSchema = z.object({
+  destination: z.string().min(2, {
+    message: "Destination must be at least 2 characters.",
+  }),
+  travelType: z.string().min(2, {
+    message: "Travel style must be at least 2 characters.",
+  }),
 });
 
 export default function Home() {
   const [groundedResponse, setGroundedResponse] =
     useState<GenerateGroundedResponseOutput | null>(null);
-  const [itineraryResponse, setItineraryResponse] =
-    useState<GenerateTravelItineraryOutput | null>(null);
+  const [videoResponse, setVideoResponse] =
+    useState<SearchYoutubeVideosOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
   const { toast } = useToast();
@@ -56,10 +62,11 @@ export default function Home() {
     },
   });
 
-  const itineraryForm = useForm<z.infer<typeof itinerarySchema>>({
-    resolver: zodResolver(itinerarySchema),
+  const videoSearchForm = useForm<z.infer<typeof videoSearchSchema>>({
+    resolver: zodResolver(videoSearchSchema),
     defaultValues: {
-      url: "",
+      destination: "",
+      travelType: "",
     },
   });
 
@@ -68,6 +75,7 @@ export default function Home() {
   ) {
     setIsLoading(true);
     setGroundedResponse(null);
+    setVideoResponse(null);
     try {
       const result = await generateGroundedResponse({ query: values.query });
       setGroundedResponse(result);
@@ -83,21 +91,23 @@ export default function Home() {
     }
   }
 
-  async function onItinerarySubmit(values: z.infer<typeof itinerarySchema>) {
+  async function onVideoSearchSubmit(values: z.infer<typeof videoSearchSchema>) {
     setIsLoading(true);
-    setItineraryResponse(null);
+    setGroundedResponse(null);
+    setVideoResponse(null);
     try {
-      const result = await generateTravelItinerary({
-        videoUrl: values.url,
+      const result = await searchYoutubeVideos({
+        destination: values.destination,
+        travelType: values.travelType,
       });
-      setItineraryResponse(result);
+      setVideoResponse(result);
     } catch (error) {
       console.error(error);
       toast({
         variant: "destructive",
         title: "An error occurred",
         description:
-          "Failed to generate an itinerary from the video. Please check the URL and try again.",
+          "Failed to find videos. Please check your query and try again.",
       });
     } finally {
       setIsLoading(false);
@@ -107,10 +117,10 @@ export default function Home() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setGroundedResponse(null);
-    setItineraryResponse(null);
+    setVideoResponse(null);
     setIsLoading(false);
     groundedSearchForm.reset();
-    itineraryForm.reset();
+    videoSearchForm.reset();
   };
 
   return (
@@ -121,8 +131,7 @@ export default function Home() {
             Find Your Next Travel Experience
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Use AI to discover destinations or generate a full travel plan from a
-            YouTube video.
+            Use AI to discover destinations or find travel inspiration from YouTube.
           </p>
         </header>
 
@@ -136,9 +145,9 @@ export default function Home() {
               <Search className="mr-2 h-4 w-4" />
               Grounded Search
             </TabsTrigger>
-            <TabsTrigger value="itinerary">
+            <TabsTrigger value="video">
               <Youtube className="mr-2 h-4 w-4" />
-              Travel Itinerary Generator
+              Video Search
             </TabsTrigger>
           </TabsList>
           <TabsContent value="search">
@@ -181,26 +190,25 @@ export default function Home() {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="itinerary">
+          <TabsContent value="video">
             <Card className="w-full shadow-lg">
               <CardContent className="p-6">
                 <p className="text-center text-muted-foreground mb-4">
-                  Get a 3-day travel plan based on a trending YouTube video,
-                  with grounded recommendations.
+                  Find inspiring travel videos from YouTube based on your interests.
                 </p>
-                <Form {...itineraryForm}>
+                <Form {...videoSearchForm}>
                   <form
-                    onSubmit={itineraryForm.handleSubmit(onItinerarySubmit)}
-                    className="flex items-start gap-4"
+                    onSubmit={videoSearchForm.handleSubmit(onVideoSearchSubmit)}
+                    className="flex flex-col sm:flex-row items-start gap-4"
                   >
                     <FormField
-                      control={itineraryForm.control}
-                      name="url"
+                      control={videoSearchForm.control}
+                      name="destination"
                       render={({ field }) => (
-                        <FormItem className="flex-grow">
+                        <FormItem className="flex-grow w-full">
                           <FormControl>
                             <Input
-                              placeholder="e.g., 'https://www.youtube.com/watch?v=...'"
+                              placeholder="Destination (e.g., 'Tokyo')"
                               {...field}
                               className="text-base"
                             />
@@ -209,9 +217,25 @@ export default function Home() {
                         </FormItem>
                       )}
                     />
-                    <Button type="submit" disabled={isLoading} size="lg">
+                    <FormField
+                      control={videoSearchForm.control}
+                      name="travelType"
+                      render={({ field }) => (
+                        <FormItem className="flex-grow w-full">
+                          <FormControl>
+                            <Input
+                              placeholder="Travel Style (e.g., 'Foodie')"
+                              {...field}
+                              className="text-base"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" disabled={isLoading} size="lg" className="w-full sm:w-auto">
                       <Youtube className="mr-2 h-5 w-5" />
-                      Generate
+                      Search Videos
                     </Button>
                   </form>
                 </Form>
@@ -233,13 +257,13 @@ export default function Home() {
                 </h2>
               </Card>
             )
-          ) : activeTab === "itinerary" ? (
-            itineraryResponse ? (
-              <ItineraryDisplay data={itineraryResponse} />
+          ) : activeTab === "video" ? (
+            videoResponse ? (
+              <VideoResultDisplay data={videoResponse} />
             ) : (
               <Card className="text-center p-12 border-dashed flex items-center justify-center h-full">
                 <h2 className="text-xl font-medium text-muted-foreground">
-                  Provide a YouTube URL to generate an itinerary.
+                  Enter a destination and travel style to find videos.
                 </h2>
               </Card>
             )
