@@ -14,6 +14,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -25,7 +32,6 @@ import {
 import type { GenerateGroundedResponseOutput } from "@/ai/schemas/grounded-response-schema";
 import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-schema";
 import { ResultsDisplay } from "@/components/results-display";
-import { ItineraryDisplay } from "@/components/itinerary-display";
 import { LoadingState } from "@/components/loading-state";
 import { Search, Youtube } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,10 +47,21 @@ const videoSearchSchema = z.object({
   destination: z.string().min(2, {
     message: "Destination must be at least 2 characters.",
   }),
-  travelType: z.string().min(2, {
-    message: "Travel style must be at least 2 characters.",
+  travelType: z.string().min(1, {
+    message: "Please select a travel style.",
   }),
 });
+
+const travelStyles = [
+  "Foodie",
+  "Adventure Seeker",
+  "Relaxation",
+  "Cultural",
+  "Budget",
+  "Luxury",
+  "Family Friendly",
+  "Backpacking",
+];
 
 export default function Home() {
   const [groundedResponse, setGroundedResponse] =
@@ -222,13 +239,23 @@ export default function Home() {
                       name="travelType"
                       render={({ field }) => (
                         <FormItem className="flex-grow w-full">
-                          <FormControl>
-                            <Input
-                              placeholder="Travel Style (e.g., 'Foodie')"
-                              {...field}
-                              className="text-base"
-                            />
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="text-base">
+                                <SelectValue placeholder="Select a travel style" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {travelStyles.map((style) => (
+                                <SelectItem key={style} value={style}>
+                                  {style}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
