@@ -93,7 +93,7 @@ export function ItineraryDisplay({ data }: ItineraryDisplayProps) {
                         <div className="flex-shrink-0 mt-1">
                           {getIconForLocation(location.name)}
                         </div>
-                        <div>
+                        <div className="w-full">
                           <p className="font-bold text-lg">{location.name}</p>
                           <p className="text-muted-foreground">{location.description}</p>
                           {location.address && (
@@ -101,6 +101,18 @@ export function ItineraryDisplay({ data }: ItineraryDisplayProps) {
                                 <MapPin className="h-3 w-3" />
                                 {location.address}
                              </p>
+                          )}
+                          {location.imageUrl && (
+                            <div className="relative h-48 w-full mt-2 rounded-lg overflow-hidden">
+                              <Image
+                                src={location.imageUrl}
+                                alt={location.name}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                data-ai-hint="tourist location"
+                              />
+                            </div>
                           )}
                         </div>
                       </div>
@@ -115,5 +127,3 @@ export function ItineraryDisplay({ data }: ItineraryDisplayProps) {
     </div>
   );
 }
-
-    
