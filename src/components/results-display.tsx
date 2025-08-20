@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { GenerateGroundedResponseOutput } from "@/ai/flows/generate-grounded-response";
+import type { GenerateGroundedResponseOutput } from "@/ai/schemas/grounded-response-schema";
 import {
   Card,
   CardContent,
