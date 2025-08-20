@@ -1,4 +1,4 @@
-import { Client, PlaceInputType } from "@googlemaps/google-maps-services-js";
+import { Client, PlaceInputType, GeocodeResponse, GeocodeRequest } from "@googlemaps/google-maps-services-js";
 import { ai } from "@/ai/genkit";
 import { z } from "zod";
 
@@ -52,6 +52,40 @@ export const findPlaceTool = ai.defineTool(
         console.error(`Google Maps API error for query "${query}":`, error);
         // Re-throw the error so it can be handled by the calling flow.
         throw new Error(`Failed to retrieve place details from Google Maps for: "${query}"`);
+      }
+    }
+  );
+
+  const geocodeToolSchema = z.object({
+    address: z.string().describe("The address to geocode."),
+  });
+  
+  export const geocodeTool = ai.defineTool(
+    {
+      name: 'geocode',
+      description: 'Geocodes a street address into latitude and longitude.',
+      inputSchema: geocodeToolSchema,
+      outputSchema: z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+      }),
+    },
+    async (input) => {
+      const { address } = input;
+      const request: GeocodeRequest = {
+        params: {
+          address: address,
+          key: process.env.GOOGLE_MAPS_API_KEY!,
+        },
+      };
+  
+      try {
+        const response: GeocodeResponse = await mapsClient.geocode(request);
+        const { lat, lng } = response.data.results[0].geometry.location;
+        return { latitude: lat, longitude: lng };
+      } catch (error) {
+        console.error(`Geocoding error for address "${address}":`, error);
+        throw new Error(`Failed to geocode address: "${address}"`);
       }
     }
   );

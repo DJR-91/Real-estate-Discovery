@@ -31,6 +31,7 @@ import {
 } from "@/ai/flows/search-youtube-videos";
 import { generateItinerary } from "@/ai/flows/generate-itinerary";
 import { generateItineraryBanner } from "@/ai/flows/generate-itinerary-banner";
+import { geocodeAddress } from "@/ai/flows/geocode-address";
 import type { GenerateGroundedResponseOutput } from "@/ai/schemas/grounded-response-schema";
 import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-schema";
 import type { GenerateItineraryOutput, GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
@@ -40,6 +41,8 @@ import { Search, Youtube } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoResultDisplay } from "@/components/video-result-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
+import MapDisplay from "@/components/map-display";
+import { useMapLoader } from "@/hooks/use-map-loader";
 import type { Video } from "@/lib/types";
 
 const groundedSearchSchema = z.object({
@@ -63,6 +66,14 @@ export interface ItineraryData {
   bannerUrl?: string;
 }
 
+export interface MapData {
+  location: {
+    name: string;
+    lat: number;
+    lng: number;
+  }
+}
+
 const travelStyles = [
   "Foodie",
   "Adventure Seeker",
@@ -81,10 +92,12 @@ export default function Home() {
     useState<SearchYoutubeVideosOutput | null>(null);
   const [itineraryResponse, setItineraryResponse] = 
     useState<ItineraryData | null>(null);
+  const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isItineraryLoading, setIsItineraryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
   const { toast } = useToast();
+  const isMapLoaded = useMapLoader();
 
   const groundedSearchForm = useForm<z.infer<typeof groundedSearchSchema>>({
     resolver: zodResolver(groundedSearchSchema),
@@ -108,6 +121,7 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setMapData(null);
     try {
       const result = await generateGroundedResponse({ query: values.query });
       setGroundedResponse(result);
@@ -128,6 +142,7 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setMapData(null);
     try {
       const result = await searchYoutubeVideos({
         destination: values.destination,
@@ -160,6 +175,7 @@ export default function Home() {
     
     setIsItineraryLoading(true);
     setItineraryResponse(null);
+    setMapData(null);
 
     const itineraryInput: GenerateItineraryInput = {
       videoId: video.id,
@@ -181,11 +197,38 @@ export default function Home() {
         generateItineraryBanner(bannerInput),
       ]);
 
-      setItineraryResponse({
+      const newItineraryResponse = {
         video: video,
         itinerary: itineraryResult.itinerary,
         bannerUrl: bannerResult.bannerUrl,
-      });
+      };
+      setItineraryResponse(newItineraryResponse);
+      
+      // After setting itinerary, geocode the first location to show on map
+      const firstLocation = itineraryResult.itinerary[0]?.locations[0];
+      if (firstLocation?.address && isMapLoaded) {
+        try {
+          const geocodeResult = await geocodeAddress({ addresses: [firstLocation.address] });
+          const loc = geocodeResult.locations[0];
+          if(loc) {
+            setMapData({
+              location: {
+                name: firstLocation.name,
+                lat: loc.latitude,
+                lng: loc.longitude,
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Geocoding failed", e);
+          toast({
+            variant: "destructive",
+            title: "Map Error",
+            description: "Could not find coordinates for the first location.",
+          });
+        }
+      }
+
     } catch (error) {
       console.error(error);
       toast({
@@ -203,6 +246,7 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setMapData(null);
     setIsLoading(false);
     setIsItineraryLoading(false);
     groundedSearchForm.reset();
@@ -340,7 +384,7 @@ export default function Home() {
           </TabsContent>
         </Tabs>
 
-        <div className="w-full min-h-[20rem]">
+        <div className="w-full min-h-[20rem] space-y-8">
           {isLoading || isItineraryLoading ? (
             <LoadingState />
           ) : activeTab === "search" ? (
@@ -366,6 +410,10 @@ export default function Home() {
               </Card>
             )
           ) : null}
+          
+          {mapData && isMapLoaded && (
+            <MapDisplay data={mapData} />
+          )}
         </div>
       </div>
     </main>
