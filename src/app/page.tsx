@@ -39,6 +39,7 @@ import { Search, Youtube, Route } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoResultDisplay } from "@/components/video-result-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
+import type { Video } from "@/lib/types";
 
 const groundedSearchSchema = z.object({
   query: z.string().min(2, {
@@ -73,6 +74,7 @@ export default function Home() {
     useState<SearchYoutubeVideosOutput | null>(null);
   const [itineraryResponse, setItineraryResponse] = 
     useState<GenerateItineraryOutput | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isItineraryLoading, setIsItineraryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
@@ -100,6 +102,7 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setSelectedVideo(null);
     try {
       const result = await generateGroundedResponse({ query: values.query });
       setGroundedResponse(result);
@@ -120,6 +123,7 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setSelectedVideo(null);
     try {
       const result = await searchYoutubeVideos({
         destination: values.destination,
@@ -139,7 +143,7 @@ export default function Home() {
     }
   }
 
-  const handleGenerateItinerary = async (video: {id: string, title: string}) => {
+  const handleGenerateItinerary = async (video: Video) => {
     const videoSearchValues = videoSearchForm.getValues();
     if (!videoSearchValues.destination || !videoSearchValues.travelType) {
       toast({
@@ -152,6 +156,7 @@ export default function Home() {
     
     setIsItineraryLoading(true);
     setItineraryResponse(null);
+    setSelectedVideo(video);
 
     const input: GenerateItineraryInput = {
       videoId: video.id,
@@ -180,6 +185,7 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setSelectedVideo(null);
     setIsLoading(false);
     setIsItineraryLoading(false);
     groundedSearchForm.reset();
@@ -188,7 +194,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12 lg:p-24 bg-background">
-      <div className="w-full max-w-4xl space-y-8">
+      <div className="w-full max-w-6xl space-y-8">
         <header className="text-center">
           <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
             Find Your Next Travel Experience
@@ -214,7 +220,7 @@ export default function Home() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="search">
-            <Card className="w-full shadow-lg">
+            <Card className="w-full shadow-lg max-w-4xl mx-auto">
               <CardContent className="p-6">
                 <p className="text-center text-muted-foreground mb-4">
                   Tell us what you're looking for, and we'll suggest
@@ -254,7 +260,7 @@ export default function Home() {
             </Card>
           </TabsContent>
           <TabsContent value="video">
-            <Card className="w-full shadow-lg">
+            <Card className="w-full shadow-lg max-w-4xl mx-auto">
               <CardContent className="p-6">
                 <p className="text-center text-muted-foreground mb-4">
                   Find inspiring travel videos, then generate a 3-day itinerary.
@@ -324,7 +330,7 @@ export default function Home() {
             groundedResponse ? (
               <ResultsDisplay data={groundedResponse} />
             ) : (
-              <Card className="text-center p-12 border-dashed flex items-center justify-center h-full">
+              <Card className="text-center p-12 border-dashed flex items-center justify-center h-full max-w-4xl mx-auto">
                 <h2 className="text-xl font-medium text-muted-foreground">
                   Let's plan your next adventure!
                 </h2>
@@ -333,12 +339,12 @@ export default function Home() {
           ) : activeTab === "video" ? (
             isItineraryLoading ? (
               <LoadingState />
-            ) : itineraryResponse ? (
-              <ItineraryDisplay data={itineraryResponse} />
+            ) : itineraryResponse && selectedVideo ? (
+              <ItineraryDisplay data={itineraryResponse} video={selectedVideo} />
             ) : videoResponse ? (
               <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
             ) : (
-              <Card className="text-center p-12 border-dashed flex items-center justify-center h-full">
+              <Card className="text-center p-12 border-dashed flex items-center justify-center h-full max-w-4xl mx-auto">
                 <h2 className="text-xl font-medium text-muted-foreground">
                   Enter a destination and travel style to find videos.
                 </h2>
