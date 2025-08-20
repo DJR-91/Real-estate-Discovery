@@ -35,7 +35,7 @@ import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-sche
 import type { GenerateItineraryOutput, GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
 import { ResultsDisplay } from "@/components/results-display";
 import { LoadingState } from "@/components/loading-state";
-import { Search, Youtube, Route } from "lucide-react";
+import { Search, Youtube } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoResultDisplay } from "@/components/video-result-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
@@ -56,6 +56,12 @@ const videoSearchSchema = z.object({
   }),
 });
 
+export interface ItineraryData {
+  video: Video;
+  itinerary: GenerateItineraryOutput['itinerary'];
+  bannerUrl?: string;
+}
+
 const travelStyles = [
   "Foodie",
   "Adventure Seeker",
@@ -73,8 +79,7 @@ export default function Home() {
   const [videoResponse, setVideoResponse] =
     useState<SearchYoutubeVideosOutput | null>(null);
   const [itineraryResponse, setItineraryResponse] = 
-    useState<GenerateItineraryOutput | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+    useState<ItineraryData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isItineraryLoading, setIsItineraryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
@@ -102,7 +107,6 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
-    setSelectedVideo(null);
     try {
       const result = await generateGroundedResponse({ query: values.query });
       setGroundedResponse(result);
@@ -123,7 +127,6 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
-    setSelectedVideo(null);
     try {
       const result = await searchYoutubeVideos({
         destination: values.destination,
@@ -156,7 +159,6 @@ export default function Home() {
     
     setIsItineraryLoading(true);
     setItineraryResponse(null);
-    setSelectedVideo(video);
 
     const input: GenerateItineraryInput = {
       videoId: video.id,
@@ -167,7 +169,11 @@ export default function Home() {
 
     try {
       const result = await generateItinerary(input);
-      setItineraryResponse(result);
+      setItineraryResponse({
+        video: video,
+        itinerary: result.itinerary,
+        bannerUrl: "https://placehold.co/1200x300.png"
+      });
     } catch (error) {
       console.error(error);
       toast({
@@ -185,7 +191,6 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
-    setSelectedVideo(null);
     setIsLoading(false);
     setIsItineraryLoading(false);
     groundedSearchForm.reset();
@@ -324,7 +329,7 @@ export default function Home() {
         </Tabs>
 
         <div className="w-full min-h-[20rem]">
-          {isLoading ? (
+          {isLoading || isItineraryLoading ? (
             <LoadingState />
           ) : activeTab === "search" ? (
             groundedResponse ? (
@@ -337,10 +342,8 @@ export default function Home() {
               </Card>
             )
           ) : activeTab === "video" ? (
-            isItineraryLoading ? (
-              <LoadingState />
-            ) : itineraryResponse && selectedVideo ? (
-              <ItineraryDisplay data={itineraryResponse} video={selectedVideo} />
+            itineraryResponse ? (
+              <ItineraryDisplay data={itineraryResponse} />
             ) : videoResponse ? (
               <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
             ) : (
@@ -356,3 +359,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
