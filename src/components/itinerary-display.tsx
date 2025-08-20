@@ -103,7 +103,7 @@ export function ItineraryDisplay({ data }: ItineraryDisplayProps) {
                              </p>
                           )}
                           {location.imageUrl && (
-                            <div className="relative h-48 w-full mt-2 rounded-lg overflow-hidden">
+                            <div className="relative h-32 w-full mt-2 rounded-lg overflow-hidden">
                               <Image
                                 src={location.imageUrl}
                                 alt={location.name}
