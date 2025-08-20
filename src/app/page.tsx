@@ -66,12 +66,11 @@ export default function Home() {
       <div className="w-full max-w-4xl space-y-8">
         <header className="text-center">
           <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            Grounded Gemini
+            Find Your Next Travel Experience
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Leveraging Google Search to ground Gemini's responses in real-time
-            information, providing accurate, up-to-date answers with verifiable
-            citations.
+            Tell us what you're looking for, and we'll suggest destinations,
+            activities, and itineraries grounded in real-time information.
           </p>
         </header>
 
@@ -89,7 +88,7 @@ export default function Home() {
                     <FormItem className="flex-grow">
                       <FormControl>
                         <Input
-                          placeholder="e.g., Who won the euro 2024?"
+                          placeholder="e.g., 'family-friendly beach vacation in Southeast Asia'"
                           {...field}
                           className="text-base"
                         />
@@ -115,7 +114,7 @@ export default function Home() {
           ) : (
             <Card className="text-center p-12 border-dashed flex items-center justify-center h-full">
               <h2 className="text-xl font-medium text-muted-foreground">
-                Ask a question to see Gemini's grounded response.
+                Let's plan your next adventure!
               </h2>
             </Card>
           )}

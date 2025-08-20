@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'Grounded Gemini',
-  description: "Demonstrating Gemini API's Google Search grounding capabilities.",
+  title: 'Find Your Next Travel Experience',
+  description: "Discover your next travel destination with AI-powered recommendations.",
 };
 
 export default function RootLayout({
