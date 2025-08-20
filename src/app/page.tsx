@@ -30,6 +30,7 @@ import {
   searchYoutubeVideos,
 } from "@/ai/flows/search-youtube-videos";
 import { generateItinerary } from "@/ai/flows/generate-itinerary";
+import { generateItineraryBanner } from "@/ai/flows/generate-itinerary-banner";
 import type { GenerateGroundedResponseOutput } from "@/ai/schemas/grounded-response-schema";
 import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-schema";
 import type { GenerateItineraryOutput, GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
@@ -160,26 +161,37 @@ export default function Home() {
     setIsItineraryLoading(true);
     setItineraryResponse(null);
 
-    const input: GenerateItineraryInput = {
+    const itineraryInput: GenerateItineraryInput = {
       videoId: video.id,
       videoTitle: video.title,
       destination: videoSearchValues.destination,
       travelType: videoSearchValues.travelType,
     };
+    
+    const bannerInput = {
+        videoTitle: video.title,
+        videoDescription: video.description,
+        destination: videoSearchValues.destination,
+    }
 
     try {
-      const result = await generateItinerary(input);
+      // Generate itinerary and banner in parallel
+      const [itineraryResult, bannerResult] = await Promise.all([
+        generateItinerary(itineraryInput),
+        generateItineraryBanner(bannerInput),
+      ]);
+
       setItineraryResponse({
         video: video,
-        itinerary: result.itinerary,
-        bannerUrl: "https://placehold.co/1200x300.png"
+        itinerary: itineraryResult.itinerary,
+        bannerUrl: bannerResult.bannerUrl,
       });
     } catch (error) {
       console.error(error);
       toast({
         variant: "destructive",
         title: "Itinerary Generation Failed",
-        description: "We couldn't create an itinerary from this video. It might not contain enough location information.",
+        description: "We couldn't create an itinerary from this video. It might not contain enough location information or the banner could not be generated.",
       });
     } finally {
       setIsItineraryLoading(false);
@@ -359,5 +371,3 @@ export default function Home() {
     </main>
   );
 }
-
-    

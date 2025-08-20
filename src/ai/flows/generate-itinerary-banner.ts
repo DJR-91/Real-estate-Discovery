@@ -1,0 +1,45 @@
+'use server';
+
+/**
+ * @fileOverview A flow that generates a banner image for a travel itinerary.
+ *
+ * This flow takes a video title and description, and uses an image generation
+ * model to create a visually appealing banner related to the travel content.
+ */
+
+import { ai } from '@/ai/genkit';
+import { GenerateItineraryBannerInputSchema, GenerateItineraryBannerOutputSchema, type GenerateItineraryBannerInput, type GenerateItineraryBannerOutput } from '@/ai/schemas/itinerary-banner-schema';
+
+
+export async function generateItineraryBanner(
+  input: GenerateItineraryBannerInput
+): Promise<GenerateItineraryBannerOutput> {
+  return generateItineraryBannerFlow(input);
+}
+
+const generateItineraryBannerFlow = ai.defineFlow(
+  {
+    name: 'generateItineraryBannerFlow',
+    inputSchema: GenerateItineraryBannerInputSchema,
+    outputSchema: GenerateItineraryBannerOutputSchema,
+  },
+  async (input) => {
+    const prompt = `A cinematic, photorealistic landscape banner for a travel video about "${input.videoTitle}". The image should be a beautiful, wide-angle shot of the main landmark or scenery of ${input.destination}. 8K, hyper-detailed, no people, no text.`;
+
+    const { media } = await ai.generate({
+      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      prompt: prompt,
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
+      },
+    });
+
+    if (!media.url) {
+      throw new Error('Failed to generate an itinerary banner.');
+    }
+
+    return {
+      bannerUrl: media.url,
+    };
+  }
+);
