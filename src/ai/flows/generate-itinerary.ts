@@ -59,103 +59,108 @@ const generateItineraryFlow = ai.defineFlow(
     outputSchema: GenerateItineraryOutputSchema,
   },
   async (input) => {
-    // Wrap the entire flow in a try...catch block for robust error handling
+    const videoUrl = `https://www.youtube.com/watch?v=${input.videoId}`;
+    let summaryOutput;
+    let itineraryOutput;
+
+    // Step 1: Summarize the YouTube video and extract places of interest.
     try {
-      const videoUrl = `https://www.youtube.com/watch?v=${input.videoId}`;
+        summaryOutput = (await ai.generate({
+            model: 'googleai/gemini-2.5-flash',
+            output: {
+                schema: z.object({
+                    summary: z.string().describe('A concise summary of the YouTube video.'),
+                    placesOfInterest: z.array(z.string()).describe('A list of significant places, landmarks, or establishments mentioned or shown in the video.')
+                })
+            },
+            prompt: [
+                {text: `Please summarize the following YouTube video titled "${input.videoTitle}".
+                Your summary should be concise and engaging.
+                Crucially, identify and list all specific places of interest (e.g., landmarks, restaurants, shops, attractions) that are mentioned or clearly visible in the video content.
+                `},
+                { media: { url: videoUrl, contentType: "video/mp4" } }
+            ],
+        })).output;
 
-      // Step 1: Summarize the YouTube video and extract places of interest.
-      const { output: summaryOutput } = await ai.generate({
-          model: 'googleai/gemini-2.5-flash-lite',
-          output: {
-              schema: z.object({
-                  summary: z.string().describe('A concise summary of the YouTube video.'),
-                  placesOfInterest: z.array(z.string()).describe('A list of significant places, landmarks, or establishments mentioned or shown in the video.')
-              })
-          },
-          prompt: [
-              {text: `Please summarize the following YouTube video titled "${input.videoTitle}".
-              Your summary should be concise and engaging.
-              Crucially, identify and list all specific places of interest (e.g., landmarks, restaurants, shops, attractions) that are mentioned or clearly visible in the video content.
-              `},
-              { media: { url: videoUrl, contentType: "video/mp4" } }
-          ],
-      });
-
-      if (!summaryOutput || !summaryOutput.summary) {
-          throw new Error('Failed to generate a summary from the video.');
-      }
-
-      const { summary, placesOfInterest } = summaryOutput;
-
-      // Step 2: Use the summary and extracted places to generate a 3-day itinerary.
-      const { output: itineraryOutput } = await ai.generate({
-          model: 'googleai/gemini-2.5-flash-lite',
-          output: {
-              schema: z.object({
-                  itinerary: z.array(ItineraryDaySchema)
-              })
-          },
-          prompt: [
-              {text: `You are a travel expert tasked with creating a 3-day itinerary for a trip to ${input.destination}.
-
-  The user's travel style is "${input.travelType}".
-
-  Here is a summary of a relevant YouTube video titled "${input.videoTitle}":
-  "${summary}"
-
-  Places of interest explicitly identified from the video: ${placesOfInterest.join(', ')}.
-
-  Based on this summary and the identified places, suggest major landmarks, restaurants, and activities.
-  Use ONLY the information derived from the video summary and the listed places of interest. Do NOT recommend anything that is not mentioned or clearly implied from the provided video summary.
-
-  For each location, provide only its name and a short description. Do NOT include an address or image URL; that will be found later.
-
-  Present the output as a 3-day plan. Each day should have a creative title and a list of locations.
-  `},
-          ],
-      });
-
-      if (!itineraryOutput || !itineraryOutput.itinerary) {
-          throw new Error('Failed to generate an itinerary based on the summary.');
-      }
-
-      // Step 3: For each location in the generated itinerary, use the Places API to find its address and a photo.
-      const itineraryWithDetails = await Promise.all(
-        itineraryOutput.itinerary.map(async (day) => {
-          const locationsWithDetails = await Promise.all(
-            day.locations.map(async (location) => {
-              try {
-                const place = await findPlaceTool({ query: `${location.name}, ${input.destination}` });
-                return {
-                  ...location,
-                  address: place.address,
-                  imageUrl: place.imageUrl,
-                };
-              } catch (error) {
-                console.warn(`Could not find details for "${location.name}", skipping.`, error);
-                return {
-                  ...location,
-                  address: "Not found",
-                  imageUrl: null, // Use null instead of undefined for serialization
-                };
-              }
-            })
-          );
-          return {
-            ...day,
-            locations: locationsWithDetails,
-          };
-        })
-      );
-
-      return {
-        itinerary: itineraryWithDetails,
-      };
+        if (!summaryOutput || !summaryOutput.summary) {
+            throw new Error('Summary output was empty.');
+        }
     } catch (error) {
-      // Catch any other errors and log them on the server
-      console.error("An error occurred in generateItineraryFlow:", error);
-      // Throw a new, clean error to the client
-      throw new Error("Failed to generate the itinerary due to a server error.");
+        console.error("Error generating video summary:", error);
+        throw new Error('Failed to analyze the YouTube video. It might be private or unavailable.');
     }
+
+    const { summary, placesOfInterest } = summaryOutput;
+
+    // Step 2: Use the summary and extracted places to generate a 3-day itinerary.
+    try {
+        itineraryOutput = (await ai.generate({
+            model: 'googleai/gemini-2.5-flash',
+            output: {
+                schema: z.object({
+                    itinerary: z.array(ItineraryDaySchema)
+                })
+            },
+            prompt: [
+                {text: `You are a travel expert tasked with creating a 3-day itinerary for a trip to ${input.destination}.
+
+The user's travel style is "${input.travelType}".
+
+Here is a summary of a relevant YouTube video titled "${input.videoTitle}":
+"${summary}"
+
+Places of interest explicitly identified from the video: ${placesOfInterest.join(', ')}.
+
+Based on this summary and the identified places, suggest major landmarks, restaurants, and activities.
+Use ONLY the information derived from the video summary and the listed places of interest. Do NOT recommend anything that is not mentioned or clearly implied from the provided video summary.
+
+For each location, provide only its name and a short description. Do NOT include an address or image URL; that will be found later.
+
+Present the output as a 3-day plan. Each day should have a creative title and a list of locations.
+`},
+            ],
+        })).output;
+
+        if (!itineraryOutput || !itineraryOutput.itinerary) {
+            throw new Error('Itinerary output was empty.');
+        }
+    } catch (error) {
+        console.error("Error generating itinerary from summary:", error);
+        throw new Error('Failed to generate an itinerary from the video content.');
+    }
+
+    // Step 3: For each location in the generated itinerary, use the Places API to find its address and a photo.
+    const itineraryWithDetails = await Promise.all(
+      itineraryOutput.itinerary.map(async (day) => {
+        const locationsWithDetails = await Promise.all(
+          day.locations.map(async (location) => {
+            try {
+              const place = await findPlaceTool({ query: `${location.name}, ${input.destination}` });
+              return {
+                ...location,
+                address: place.address,
+                imageUrl: place.imageUrl,
+              };
+            } catch (error) {
+              console.warn(`Could not find details for "${location.name}", skipping. Error:`, error);
+              // Gracefully handle the error by returning the location without extra details.
+              return {
+                ...location,
+                address: "Address not available",
+                imageUrl: null,
+              };
+            }
+          })
+        );
+        return {
+          ...day,
+          locations: locationsWithDetails,
+        };
+      })
+    );
+
+    return {
+      itinerary: itineraryWithDetails,
+    };
   }
 );

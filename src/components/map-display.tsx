@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import type { MapData } from '@/app/page';
 
-// TypeScript declaration for the 'gmp-map-3d' element
+// Correct TypeScript declarations for the 'gmp-map-3d' element
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -14,15 +14,17 @@ declare global {
          tilt: number;
          heading: number;
          range: number;
-         flyCameraTo: (options: any) => Promise<void>;
-         flyCameraAround: (options: any) => void;
+         // Corrected method names and signatures
+         flyTo: (cameraOptions: any, animationOptions: any) => Promise<void>;
+         orbit: (cameraOptions: any, animationOptions: any) => void;
       };
     }
   }
 }
 
 export default function MapDisplay({ data }: { data: MapData }) {
-  const mapRef = useRef<google.maps.Map3DElement | null>(null);
+  // The ref type should be the generic HTMLElement or the specific element type
+  const mapRef = useRef<JSX.IntrinsicElements['gmp-map-3d'] | null>(null);
 
   useEffect(() => {
     if (!data?.location) {
@@ -40,7 +42,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
         const { MapMode } = await google.maps.importLibrary("maps3d") as google.maps.Maps3DLibrary;
         const locationCoordinates = { lat: data.location.lat, lng: data.location.lng };
 
-        // Define the camera state for the animation
+        // Define the camera state for the animations
         const cameraOptions = {
             center: locationCoordinates,
             range: 800,
@@ -55,13 +57,14 @@ export default function MapDisplay({ data }: { data: MapData }) {
         map.tilt = 75;
         map.heading = 270;
         map.range = 2000;
-
-        await map.flyCameraTo({ endCamera: cameraOptions, durationMillis: 4000 });
         
-        map.flyCameraAround({
-          camera: cameraOptions,
-          durationMillis: 25000,
-          rounds: Infinity
+        // Use the correct 'flyTo' method
+        await map.flyTo(cameraOptions, { duration: 4000 });
+        
+        // Use the correct 'orbit' method with correct options
+        map.orbit(cameraOptions, {
+          duration: 25000,
+          rotations: Infinity
         });
 
       } catch (error) {
