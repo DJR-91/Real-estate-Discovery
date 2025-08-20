@@ -37,29 +37,33 @@ export default function MapDisplay({ data }: { data: MapData }) {
       const map = mapRef.current as any;
 
       try {
-        const { MapMode } = await google.maps.importLibrary("maps3d") as google.maps.Maps3DLibrary;
         const locationCoordinates = { lat: data.location.lat, lng: data.location.lng };
 
         // Define the camera state for the animation
-        const cameraOptions = {
+        const endCameraOptions = {
             center: locationCoordinates,
             range: 800,
             tilt: 75,
             heading: 330,
         };
+        
+        const aroundCameraOptions = {
+            ...endCameraOptions,
+            range: 1200,
+        }
 
         // Set initial properties directly on the element
         map.center = `${locationCoordinates.lat},${locationCoordinates.lng}`;
-        map.mode = MapMode.SATELLITE;
+        map.mode = 'satellite';
         map.defaultUIDisabled = true;
         map.tilt = 75;
         map.heading = 270;
         map.range = 2000;
 
-        await map.flyCameraTo({ endCamera: cameraOptions, durationMillis: 4000 });
+        await map.flyCameraTo({ endCamera: endCameraOptions, durationMillis: 4000 });
         
         map.flyCameraAround({
-          camera: cameraOptions,
+          camera: aroundCameraOptions,
           durationMillis: 25000,
           rounds: Infinity
         });
