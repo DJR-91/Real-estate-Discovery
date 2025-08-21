@@ -38,6 +38,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
           return; // Stop execution if coordinates are not valid numbers
         }
 
+        // The center property must only contain lat and lng.
         const locationCoordinates = { 
           lat: lat, 
           lng: lng
