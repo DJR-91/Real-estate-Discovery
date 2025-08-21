@@ -31,7 +31,6 @@ import {
 } from "@/ai/flows/search-youtube-videos";
 import { generateItinerary } from "@/ai/flows/generate-itinerary";
 import { generateItineraryBanner } from "@/ai/flows/generate-itinerary-banner";
-import { geocodeAddress } from "@/ai/flows/geocode-address";
 import type { GenerateGroundedResponseOutput } from "@/ai/schemas/grounded-response-schema";
 import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-schema";
 import type { GenerateItineraryOutput, GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
@@ -159,6 +158,23 @@ export default function Home() {
       setIsLoading(false);
     }
   }
+  
+  const geocodeAddress = (address: string): Promise<google.maps.LatLngLiteral> => {
+    return new Promise((resolve, reject) => {
+        if (!window.google || !window.google.maps) {
+            return reject(new Error("Google Maps API not loaded."));
+        }
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address }, (results, status) => {
+            if (status === "OK" && results && results[0]) {
+                const location = results[0].geometry.location;
+                resolve({ lat: location.lat(), lng: location.lng() });
+            } else {
+                reject(new Error(`Geocode was not successful for the following reason: ${status}`));
+            }
+        });
+    });
+  };
 
   const handleGenerateItinerary = async (video: Video) => {
     const videoSearchValues = videoSearchForm.getValues();
@@ -189,7 +205,6 @@ export default function Home() {
     }
 
     try {
-      // Generate itinerary and banner in parallel
       const [itineraryResult, bannerResult] = await Promise.all([
         generateItinerary(itineraryInput),
         generateItineraryBanner(bannerInput),
@@ -201,28 +216,24 @@ export default function Home() {
         bannerUrl: bannerResult.bannerUrl,
       });
       
-      // After setting itinerary, geocode the first location to show on map
       const firstLocation = itineraryResult.itinerary[0]?.locations[0];
       if (firstLocation?.address) {
         try {
-          const geocodeResult = await geocodeAddress({ addresses: [firstLocation.address] });
-          const loc = geocodeResult.locations[0];
-          if(loc) {
+            const coords = await geocodeAddress(firstLocation.address);
             setMapData({
-              location: {
-                name: firstLocation.name,
-                lat: loc.latitude,
-                lng: loc.longitude,
-              }
+                location: {
+                    name: firstLocation.name,
+                    lat: coords.lat,
+                    lng: coords.lng,
+                }
             });
-          }
         } catch (e) {
-          console.error("Geocoding failed", e);
-          toast({
-            variant: "destructive",
-            title: "Map Error",
-            description: "Could not find coordinates for the first location.",
-          });
+            console.error("Client-side geocoding failed", e);
+            toast({
+              variant: "destructive",
+              title: "Map Error",
+              description: "Could not find coordinates for the first location.",
+            });
         }
       }
 
