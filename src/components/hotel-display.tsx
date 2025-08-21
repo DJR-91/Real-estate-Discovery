@@ -1,3 +1,7 @@
+
+"use client";
+
+import * as React from "react";
 import type { FindHotelsOutput } from "@/ai/schemas/hotel-schema";
 import {
   Card,
@@ -7,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Image from "next/image";
-import { Building, MapPin, Play } from "lucide-react";
+import { Building, MapPin, Play, Pause } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface HotelDisplayProps {
@@ -16,13 +20,37 @@ interface HotelDisplayProps {
 
 export function HotelDisplay({ data }: HotelDisplayProps) {
   const audioUrl = "https://storage.cloud.google.com/jfk-files/outbound.wav?authuser=3";
-  let audio: HTMLAudioElement | null = null;
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+
+  React.useEffect(() => {
+    // Initialize the audio object only on the client side
+    if (!audioRef.current) {
+        audioRef.current = new Audio(audioUrl);
+        audioRef.current.onended = () => setIsPlaying(false);
+    }
+
+    // Cleanup function to pause and nullify audio on component unmount
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+  }, [audioUrl]);
 
   const handlePlayAudio = () => {
-    if (!audio) {
-      audio = new Audio(audioUrl);
+    if (audioRef.current) {
+      audioRef.current.play();
+      setIsPlaying(true);
     }
-    audio.play();
+  };
+
+  const handlePauseAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
   };
 
   return (
@@ -30,10 +58,16 @@ export function HotelDisplay({ data }: HotelDisplayProps) {
       <div className="text-center mb-6">
         <h2 className="font-headline text-3xl text-primary">Recommended Hotels</h2>
         <p className="text-muted-foreground">A selection of hotels at your destination.</p>
-        <Button onClick={handlePlayAudio} variant="outline" className="mt-4">
-          <Play className="mr-2 h-4 w-4" />
-          AI Agent for Early Check Request
-        </Button>
+        <div className="mt-4 flex justify-center gap-4">
+            <Button onClick={handlePlayAudio} variant="outline" disabled={isPlaying}>
+                <Play className="mr-2 h-4 w-4" />
+                AI Agent for Early Check Request
+            </Button>
+            <Button onClick={handlePauseAudio} variant="outline" disabled={!isPlaying}>
+                <Pause className="mr-2 h-4 w-4" />
+                Pause
+            </Button>
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data.hotels.map((hotel, index) => (
