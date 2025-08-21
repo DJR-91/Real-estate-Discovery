@@ -14,25 +14,10 @@ export type MapData = {
 // Define a more specific type for the 3D Map HTML Element
 interface Map3DElement extends HTMLElement {
   center: { lat: number; lng: number; };
+  tilt: number;
+  heading: number;
+  range: number;
   defaultUIDisabled: boolean;
-  flyCameraTo: (options: {
-    endCamera: {
-      center: { lat: number; lng: number; };
-      tilt: number;
-      heading: number;
-      range: number;
-    },
-    durationMillis: number;
-  }) => Promise<void>;
-  orbit: (options: {
-    center: { lat: number; lng: number; };
-    tilt: number;
-    heading: number;
-    range: number;
-  }, animationOptions: {
-    duration: number;
-    rotations: number;
-  }) => void;
 }
 
 // Update the global JSX namespace for TypeScript
@@ -53,7 +38,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
       return;
     }
 
-    const initAndAnimateMap = async () => {
+    const initMap = async () => {
       if (!mapRef.current) {
         return;
       }
@@ -71,33 +56,21 @@ export default function MapDisplay({ data }: { data: MapData }) {
       const locationCoordinates = { lat, lng };
 
       try {
+        // Set initial map properties directly
         map.center = locationCoordinates;
         map.defaultUIDisabled = true;
-
-        const cameraOptions = {
-            center: locationCoordinates,
-            range: 700,
-            tilt: 65,
-            heading: 330,
-        };
+        map.tilt = 75;
+        map.heading = 330;
+        map.range = 1000; // altitude
         
-        await map.flyCameraTo({ endCamera: cameraOptions, durationMillis: 4000 });
-        
-        map.orbit(cameraOptions, {
-          duration: 25000,
-          rotations: Infinity
-        });
-
       } catch (error) {
-          console.error("Failed to initialize or animate Google Maps 3D:", error);
+          console.error("Failed to initialize Google Maps 3D:", error);
       }
     };
     
-    // The google maps script is loaded in the root layout,
-    // but we can ensure the library is ready before animating.
     if (google?.maps?.importLibrary) {
         google.maps.importLibrary('maps3d').then(() => {
-            initAndAnimateMap();
+            initMap();
         });
     }
 
@@ -122,7 +95,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
           <span>Photorealistic 3D Map</span>
         </h2>
         <p style={{ marginTop: '0.5rem', color: '#a0aec0' }}>
-          Flying to: <b>{data.location.name}</b>
+          Displaying: <b>{data.location.name}</b>
           <br />
           <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', color: '#718096' }}>
             Coords: {Number(data.location.lat).toFixed(6)}, {Number(data.location.lng).toFixed(6)}
@@ -132,7 +105,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
       <div style={{ padding: '1.5rem', paddingTop: 0 }}>
         <gmp-map-3d 
           ref={mapRef} 
-          style={{ height: '500px', width: '`100%', borderRadius: '0.5rem', background: '#e0e0e0' }}
+          style={{ height: '500px', width: '100%', borderRadius: '0.5rem', background: '#e0e0e0' }}
         ></gmp-map-3d>
       </div>
       <style dangerouslySetInnerHTML={{ __html: `
