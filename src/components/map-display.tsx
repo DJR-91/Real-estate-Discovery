@@ -40,8 +40,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
 
         const locationCoordinates = { 
           lat: lat, 
-          lng: lng,
-          altitude: 0 // The 'altitude' property is required for 3D coordinates
+          lng: lng
         };
         
         // Set initial map properties
@@ -51,23 +50,6 @@ export default function MapDisplay({ data }: { data: MapData }) {
         map.heading = 270;
         map.range = 2000;
         // NOTE: The line 'map.mode = "satellite"' was removed as it's not a valid mode for gmp-map-3d
-
-        // Define the camera options for the animation sequence
-        const cameraOptions = {
-            center: locationCoordinates,
-            range: 800,
-            tilt: 75,
-            heading: 330,
-        };
-
-        // Animate the camera flying to the destination
-        await map.flyTo(cameraOptions, { duration: 4000 });
-
-        // Begin an infinite orbit animation around the location
-        map.orbit(cameraOptions, {
-          duration: 25000,
-          rotations: Infinity
-        });
 
       } catch (error) {
           console.error("Failed to initialize or animate Google Maps 3D:", error);
@@ -91,7 +73,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
           <span>Photorealistic 3D Map</span>
         </h2>
         <p style={{ marginTop: '0.5rem', color: '#a0aec0' }}>
-          Flying to the first recommended location: {data.location.name}.
+          Showing the first recommended location: {data.location.name}.
           <br />
           <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', color: '#718096' }}>
             Coordinates: {Number(data.location.lat).toFixed(6)}, {Number(data.location.lng).toFixed(6)}
