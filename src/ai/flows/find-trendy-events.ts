@@ -22,23 +22,26 @@ const findTrendyEventsFlow = ai.defineFlow(
     outputSchema: FindTrendyEventsOutputSchema,
   },
   async (input) => {
-    // Step 1: Generate a theme from the video summary
-    const themeResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-lite',
-      prompt: `Based on the following summary of a travel video, what is a one or two-word theme for the trip (e.g., "Foodie trip", "Historic Adventure", "Mountain Trek")?
-      
-      Summary:
-      ---
-      ${input.videoSummary}
-      ---
-      
-      Theme:`,
-      output: {
-        schema: z.string(),
-      },
-    });
+    let theme = "General Interest";
 
-    const theme = themeResponse.output || "General Interest";
+    // Step 1: Generate a theme from the video summary, but only if a summary exists.
+    if (input.videoSummary && input.videoSummary.trim() !== '') {
+        const themeResponse = await ai.generate({
+            model: 'googleai/gemini-2.5-flash-lite',
+            prompt: `Based on the following summary of a travel video, what is a one or two-word theme for the trip (e.g., "Foodie trip", "Historic Adventure", "Mountain Trek")?
+      
+            Summary:
+            ---
+            ${input.videoSummary}
+            ---
+      
+            Theme:`,
+            output: {
+                schema: z.string(),
+            },
+        });
+        theme = themeResponse.output || "General Interest";
+    }
 
     // Step 2: Construct a detailed query for the grounded response flow using the theme.
     const groundedQuery = `Based on a trip to ${input.destination} with a theme of "${theme}", find a list of 5 trendy and interesting events happening in that city.
