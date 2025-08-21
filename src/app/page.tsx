@@ -42,7 +42,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoResultDisplay } from "@/components/video-result-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
 import MapDisplay from "@/components/map-display";
-import { useMapLoader } from "@/hooks/use-map-loader";
 import type { Video } from "@/lib/types";
 
 const groundedSearchSchema = z.object({
@@ -97,7 +96,6 @@ export default function Home() {
   const [isItineraryLoading, setIsItineraryLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
   const { toast } = useToast();
-  const isMapLoaded = useMapLoader();
 
   const groundedSearchForm = useForm<z.infer<typeof groundedSearchSchema>>({
     resolver: zodResolver(groundedSearchSchema),
@@ -205,7 +203,7 @@ export default function Home() {
       
       // After setting itinerary, geocode the first location to show on map
       const firstLocation = itineraryResult.itinerary[0]?.locations[0];
-      if (firstLocation?.address && isMapLoaded) {
+      if (firstLocation?.address) {
         try {
           const geocodeResult = await geocodeAddress({ addresses: [firstLocation.address] });
           const loc = geocodeResult.locations[0];
@@ -410,7 +408,7 @@ export default function Home() {
             )
           ) : null}
           
-          {mapData && isMapLoaded && (
+          {mapData && (
             <div className="pt-8">
               <MapDisplay data={mapData} />
             </div>
