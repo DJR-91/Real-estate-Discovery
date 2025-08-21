@@ -48,7 +48,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
         map.defaultUIDisabled = true;
         map.tilt = 75;
         map.heading = 270;
-        map.range = 2000;
+        map.range = 100;
         // NOTE: The line 'map.mode = "satellite"' was removed as it's not a valid mode for gmp-map-3d
 
       } catch (error) {
