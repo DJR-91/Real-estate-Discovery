@@ -49,6 +49,7 @@ import type { FindHotelsOutput } from "@/ai/schemas/hotel-schema";
 import { HotelDisplay } from "@/components/hotel-display";
 import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
 import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
+import { EventsDisplay } from "@/components/events-display";
 
 
 const groundedSearchSchema = z.object({
@@ -510,3 +511,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
