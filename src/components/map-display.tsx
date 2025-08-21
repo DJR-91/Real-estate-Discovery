@@ -30,7 +30,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
       try {
         const locationCoordinates = { lat: data.location.lat, lng: data.location.lng };
 
-        // Define the camera state for the animations
+        // Define the camera state for the animations using the dynamic location
         const cameraOptions = {
             center: locationCoordinates,
             range: 800,
