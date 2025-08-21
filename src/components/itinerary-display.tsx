@@ -1,3 +1,4 @@
+
 import type { ItineraryData } from "@/app/page";
 import {
   Card,
@@ -12,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper } from "lucide-react";
 import Image from "next/image";
 import { Button } from "./ui/button";
+import { Skeleton } from "./ui/skeleton";
 
 interface ItineraryDisplayProps {
   data: ItineraryData;
@@ -43,13 +45,14 @@ function getIconForLocation(name: string): React.ReactNode {
 }
 
 export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEvents, isEventsLoading }: ItineraryDisplayProps) {
-  const { video, itinerary, bannerUrl, destination, videoSummary } = data;
+  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <Card className="shadow-lg overflow-hidden">
-         {bannerUrl && (
-          <div className="relative w-full h-[300px]">
+        <div className="relative w-full h-[300px] bg-muted">
+          {isBannerLoading && <Skeleton className="w-full h-full" />}
+          {bannerUrl && (
             <Image
               src={bannerUrl}
               alt="AI-generated itinerary banner"
@@ -58,8 +61,8 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEve
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               data-ai-hint="travel banner"
             />
-          </div>
-        )}
+          )}
+        </div>
         <CardHeader>
           <CardTitle className="font-headline text-3xl text-primary">Your 3-Day Itinerary</CardTitle>
           <CardDescription>

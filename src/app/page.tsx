@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -48,7 +49,6 @@ import type { FindHotelsOutput } from "@/ai/schemas/hotel-schema";
 import { HotelDisplay } from "@/components/hotel-display";
 import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
 import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
-import { EventsDisplay } from "@/components/events-display";
 
 
 const groundedSearchSchema = z.object({
@@ -72,6 +72,7 @@ export interface ItineraryData {
   videoSummary: string;
   destination: string;
   bannerUrl?: string;
+  isBannerLoading: boolean;
 }
 
 export type MapData = {
@@ -225,19 +226,19 @@ export default function Home() {
     }
 
     try {
-      const [itineraryResult, bannerResult] = await Promise.all([
-        generateItinerary(itineraryInput),
-        generateItineraryBanner(bannerInput),
-      ]);
-
+      // Generate itinerary first
+      const itineraryResult = await generateItinerary(itineraryInput);
+      
+      // Show itinerary immediately, with a loading state for the banner
       setItineraryResponse({
         video: video,
         itinerary: itineraryResult.itinerary,
         videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
-        bannerUrl: bannerResult.bannerUrl,
+        isBannerLoading: true,
       });
-      
+
+      // Show map for the first location
       const firstLocation = itineraryResult.itinerary[0]?.locations[0];
       if (firstLocation?.address) {
         try {
@@ -258,16 +259,23 @@ export default function Home() {
             });
         }
       }
+      setIsItineraryLoading(false);
+
+      // Now, generate the banner in the background
+      const bannerResult = await generateItineraryBanner(bannerInput);
+      
+      // Update the state with the banner URL when it's ready
+      setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: bannerResult.bannerUrl, isBannerLoading: false }) : null);
 
     } catch (error) {
       console.error(error);
+      setIsItineraryLoading(false); // Make sure loading stops on error
+      setItineraryResponse(null); // Clear any partial state
       toast({
         variant: "destructive",
         title: "Itinerary Generation Failed",
-        description: "We couldn't create an itinerary from this video. It might not contain enough location information or the banner could not be generated.",
+        description: "We couldn't create an itinerary from this video. It might not contain enough location information.",
       });
-    } finally {
-      setIsItineraryLoading(false);
     }
   };
 
