@@ -5,16 +5,27 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { Building, MapPin } from "lucide-react";
+import { Building, MapPin, Play } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface HotelDisplayProps {
   data: FindHotelsOutput;
 }
 
 export function HotelDisplay({ data }: HotelDisplayProps) {
+  const audioUrl = "https://storage.cloud.google.com/jfk-files/outbound.wav?authuser=3";
+  let audio: HTMLAudioElement | null = null;
+
+  const handlePlayAudio = () => {
+    if (!audio) {
+      audio = new Audio(audioUrl);
+    }
+    audio.play();
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="text-center">
@@ -50,6 +61,12 @@ export function HotelDisplay({ data }: HotelDisplayProps) {
                 <span>{hotel.address}</span>
               </p>
             </CardContent>
+            <CardFooter>
+              <Button onClick={handlePlayAudio} variant="outline" className="w-full">
+                <Play className="mr-2 h-4 w-4" />
+                Play Audio Clip
+              </Button>
+            </CardFooter>
           </Card>
         ))}
       </div>
