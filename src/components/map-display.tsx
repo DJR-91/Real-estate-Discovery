@@ -11,9 +11,9 @@ export type MapData = {
   };
 };
 
-// Define a more specific type for the 3D Map HTML Element
+// Define a more specific type for the 3D Map HTML Element, including the correct center property
 interface Map3DElement extends HTMLElement {
-  center: { lat: number; lng: number; };
+  center: { lat: number; lng: number; altitude: number };
   defaultUIDisabled: boolean;
   tilt: number;
   heading: number;
@@ -48,14 +48,15 @@ export default function MapDisplay({ data }: { data: MapData }) {
 
       const map = mapRef.current;
       
-      const locationCoordinates = { lat, lng };
+      // Use the correct structure for center, including the hardcoded altitude.
+      const locationCoordinates = { lat, lng, altitude: 100 };
 
       // --- Set Initial Map Properties (No Animation) ---
       map.center = locationCoordinates;
+      map.defaultUIDisabled = true;
       map.tilt = 75;
       map.heading = 330;
-      map.range = 100; // Altitude in meters
-      map.defaultUIDisabled = true;
+      map.range = 100; // This controls camera distance/zoom, distinct from center altitude
     };
     
     initStaticMap();
