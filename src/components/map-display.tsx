@@ -49,7 +49,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
         map.tilt = 75;
         map.heading = 270;
         map.range = 100;
-        // NOTE: The line 'map.mode = "satellite"' was removed as it's not a valid mode for gmp-map-3d
+        map.mode = "satellite";
 
       } catch (error) {
           console.error("Failed to initialize or animate Google Maps 3D:", error);
