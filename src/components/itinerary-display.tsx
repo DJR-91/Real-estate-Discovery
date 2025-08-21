@@ -17,7 +17,7 @@ interface ItineraryDisplayProps {
   data: ItineraryData;
   onFindHotels: (destination: string) => void;
   isHotelLoading: boolean;
-  onFindEvents: (destination: string, videoTitle: string) => void;
+  onFindEvents: (destination: string, videoSummary: string) => void;
   isEventsLoading: boolean;
 }
 
@@ -43,7 +43,7 @@ function getIconForLocation(name: string): React.ReactNode {
 }
 
 export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEvents, isEventsLoading }: ItineraryDisplayProps) {
-  const { video, itinerary, bannerUrl, destination } = data;
+  const { video, itinerary, bannerUrl, destination, videoSummary } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -145,7 +145,7 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEve
             <div className="w-full md:w-auto">
                 <h3 className="font-headline text-xl text-primary mb-2">What's Happening?</h3>
                 <p className="text-muted-foreground mb-4">Discover trendy, upcoming events at your destination.</p>
-                <Button onClick={() => onFindEvents(destination, video.title)} disabled={isEventsLoading}>
+                <Button onClick={() => onFindEvents(destination, videoSummary)} disabled={isEventsLoading}>
                     {isEventsLoading ? (
                         <Loader className="mr-2 h-4 w-4 animate-spin" />
                     ) : (

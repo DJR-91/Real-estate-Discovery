@@ -7,7 +7,7 @@ import { z } from 'genkit';
 // Input schema for the event finding flow
 export const FindTrendyEventsInputSchema = z.object({
   destination: z.string().describe('The destination city to search for events in (e.g., "Tokyo").'),
-  videoTitle: z.string().describe('The title of the YouTube video for context.'),
+  videoSummary: z.string().describe('The summary of the YouTube video for context.'),
 });
 export type FindTrendyEventsInput = z.infer<typeof FindTrendyEventsInputSchema>;
 

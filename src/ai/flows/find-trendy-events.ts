@@ -9,6 +9,7 @@
 import { ai } from '@/ai/genkit';
 import { FindTrendyEventsInputSchema, FindTrendyEventsOutputSchema, type FindTrendyEventsInput, type FindTrendyEventsOutput } from '@/ai/schemas/event-schema';
 import { generateGroundedResponse } from './generate-grounded-response';
+import { z } from 'genkit';
 
 export async function findTrendyEvents(input: FindTrendyEventsInput): Promise<FindTrendyEventsOutput> {
   return findTrendyEventsFlow(input);
@@ -21,8 +22,26 @@ const findTrendyEventsFlow = ai.defineFlow(
     outputSchema: FindTrendyEventsOutputSchema,
   },
   async (input) => {
-    // Step 1: Construct a detailed query for the grounded response flow.
-    const groundedQuery = `Based on a travel video titled "${input.videoTitle}", find a list of 5 trendy and interesting events happening in ${input.destination}.
+    // Step 1: Generate a theme from the video summary
+    const themeResponse = await ai.generate({
+      model: 'googleai/gemini-2.5-flash-lite',
+      prompt: `Based on the following summary of a travel video, what is a one or two-word theme for the trip (e.g., "Foodie trip", "Historic Adventure", "Mountain Trek")?
+      
+      Summary:
+      ---
+      ${input.videoSummary}
+      ---
+      
+      Theme:`,
+      output: {
+        schema: z.string(),
+      },
+    });
+
+    const theme = themeResponse.output || "General Interest";
+
+    // Step 2: Construct a detailed query for the grounded response flow using the theme.
+    const groundedQuery = `Based on a trip to ${input.destination} with a theme of "${theme}", find a list of 5 trendy and interesting events happening in that city.
 
     Crucially, you MUST ensure these events are happening in the near future (within the next 6 months). Do not include past events.
 
@@ -32,7 +51,7 @@ const findTrendyEventsFlow = ai.defineFlow(
     3. The direct URL to a webpage with more information about the event.
     `;
 
-    // Step 2: Call the existing `generateGroundedResponse` flow to get a text answer.
+    // Step 3: Call the existing `generateGroundedResponse` flow to get a text answer.
     const groundedResult = await generateGroundedResponse({ query: groundedQuery });
     const rawTextResponse = groundedResult.response;
 
@@ -40,7 +59,7 @@ const findTrendyEventsFlow = ai.defineFlow(
         throw new Error(`Could not find any upcoming events in ${input.destination}. The grounded response was empty.`);
     }
 
-    // Step 3: Use another LLM call to parse the unstructured text into the required structured JSON format.
+    // Step 4: Use another LLM call to parse the unstructured text into the required structured JSON format.
     const parsingResponse = await ai.generate({
         model: 'googleai/gemini-2.5-flash-lite',
         prompt: `Please parse the following text, which contains a list of events, and format it as a JSON object that conforms to the specified schema.

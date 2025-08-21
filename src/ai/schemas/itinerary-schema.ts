@@ -34,5 +34,6 @@ const ItineraryDayWithDetailsSchema = ItineraryDaySchema.extend({
 
 export const GenerateItineraryOutputSchema = z.object({
   itinerary: z.array(ItineraryDayWithDetailsSchema).describe('The 3-day itinerary.'),
+  videoSummary: z.string().describe('A concise summary of the YouTube video used as a source.'),
 });
 export type GenerateItineraryOutput = z.infer<typeof GenerateItineraryOutputSchema>;

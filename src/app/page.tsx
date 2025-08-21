@@ -69,6 +69,7 @@ const videoSearchSchema = z.object({
 export interface ItineraryData {
   video: Video;
   itinerary: GenerateItineraryOutput['itinerary'];
+  videoSummary: string;
   destination: string;
   bannerUrl?: string;
 }
@@ -232,6 +233,7 @@ export default function Home() {
       setItineraryResponse({
         video: video,
         itinerary: itineraryResult.itinerary,
+        videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
         bannerUrl: bannerResult.bannerUrl,
       });
@@ -287,11 +289,11 @@ export default function Home() {
     }
   };
 
-  const handleFindEvents = async (destination: string, videoTitle: string) => {
+  const handleFindEvents = async (destination: string, videoSummary: string) => {
     setIsEventsLoading(true);
     setEventsResponse(null);
     try {
-      const result = await findTrendyEvents({ destination, videoTitle });
+      const result = await findTrendyEvents({ destination, videoSummary });
       setEventsResponse(result);
     } catch (error) {
       console.error("Failed to find events:", error);
