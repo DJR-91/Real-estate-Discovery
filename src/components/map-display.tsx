@@ -51,6 +51,9 @@ export default function MapDisplay({ data }: { data: MapData }) {
       // Use the correct structure for center, including the hardcoded altitude.
       const locationCoordinates = { lat, lng, altitude: 100 };
 
+      // Log the center location to the console
+      console.log("Rendering map with center location:", locationCoordinates);
+
       // --- Set Initial Map Properties (No Animation) ---
       map.center = locationCoordinates;
       map.defaultUIDisabled = true;
@@ -81,7 +84,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
           Photorealistic 3D Map
         </h2>
         <p style={{ marginTop: '0.5rem', color: '#a0aec0' }}>
-          Displaying location: <b>{data.location.name}</b>
+          Displaying location: <b>{data.location.name}</b> ({data.location.lat.toFixed(4)}, {data.location.lng.toFixed(4)})
         </p>
       </div>
       <div style={{ padding: '1.5rem', paddingTop: 0 }}>
