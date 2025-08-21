@@ -66,12 +66,12 @@ export interface ItineraryData {
   bannerUrl?: string;
 }
 
-export interface MapData {
+export type MapData = {
   location: {
     name: string;
     lat: number;
     lng: number;
-  }
+  };
 }
 
 const travelStyles = [
@@ -197,12 +197,11 @@ export default function Home() {
         generateItineraryBanner(bannerInput),
       ]);
 
-      const newItineraryResponse = {
+      setItineraryResponse({
         video: video,
         itinerary: itineraryResult.itinerary,
         bannerUrl: bannerResult.bannerUrl,
-      };
-      setItineraryResponse(newItineraryResponse);
+      });
       
       // After setting itinerary, geocode the first location to show on map
       const firstLocation = itineraryResult.itinerary[0]?.locations[0];
@@ -412,7 +411,9 @@ export default function Home() {
           ) : null}
           
           {mapData && isMapLoaded && (
-            <MapDisplay data={mapData} />
+            <div className="pt-8">
+              <MapDisplay data={mapData} />
+            </div>
           )}
         </div>
       </div>

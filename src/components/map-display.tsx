@@ -7,24 +7,13 @@ import type { MapData } from '@/app/page';
 declare global {
   namespace JSX {
     interface IntrinsicElements {
-      'gmp-map-3d': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-         center: google.maps.LatLngLiteral;
-         mode: string;
-         defaultUIDisabled: boolean;
-         tilt: number;
-         heading: number;
-         range: number;
-         // Corrected method names and signatures
-         flyTo: (cameraOptions: any, animationOptions: any) => Promise<void>;
-         orbit: (cameraOptions: any, animationOptions: any) => void;
-      };
+      'gmp-map-3d': any; // Use 'any' for simplicity with web components in React/TSX
     }
   }
 }
 
 export default function MapDisplay({ data }: { data: MapData }) {
-  // The ref type should be the generic HTMLElement or the specific element type
-  const mapRef = useRef<JSX.IntrinsicElements['gmp-map-3d'] | null>(null);
+  const mapRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!data?.location) {
@@ -58,10 +47,10 @@ export default function MapDisplay({ data }: { data: MapData }) {
         map.heading = 270;
         map.range = 2000;
         
-        // Use the correct 'flyTo' method
+        // Fly to the location
         await map.flyTo(cameraOptions, { duration: 4000 });
         
-        // Use the correct 'orbit' method with correct options
+        // Orbit around the location
         map.orbit(cameraOptions, {
           duration: 25000,
           rotations: Infinity
