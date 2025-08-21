@@ -5,14 +5,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Building, MapPin, Utensils, FerrisWheel } from "lucide-react";
+import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader } from "lucide-react";
 import Image from "next/image";
+import { Button } from "./ui/button";
 
 interface ItineraryDisplayProps {
   data: ItineraryData;
+  onFindHotels: (destination: string) => void;
+  isHotelLoading: boolean;
 }
 
 const locationIcons: { [key: string]: React.ReactNode } = {
@@ -36,8 +40,8 @@ function getIconForLocation(name: string): React.ReactNode {
   return locationIcons.default;
 }
 
-export function ItineraryDisplay({ data }: ItineraryDisplayProps) {
-  const { video, itinerary, bannerUrl } = data;
+export function ItineraryDisplay({ data, onFindHotels, isHotelLoading }: ItineraryDisplayProps) {
+  const { video, itinerary, bannerUrl, destination } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -123,6 +127,20 @@ export function ItineraryDisplay({ data }: ItineraryDisplayProps) {
             </div>
           </div>
         </CardContent>
+        <CardFooter className="bg-muted/50 p-6">
+            <div className="w-full">
+                <h3 className="font-headline text-xl text-primary mb-2">Ready to Book?</h3>
+                <p className="text-muted-foreground mb-4">Find hotels and places to stay at your destination.</p>
+                <Button onClick={() => onFindHotels(destination)} disabled={isHotelLoading}>
+                    {isHotelLoading ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <Hotel className="mr-2 h-4 w-4" />
+                    )}
+                    Find Hotels in {destination}
+                </Button>
+            </div>
+        </CardFooter>
       </Card>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 
-// Define the type for your map data structure
+// Define the type for the data you'll pass as a prop
 export type MapData = {
   location: {
     name: string;
@@ -11,16 +11,16 @@ export type MapData = {
   };
 };
 
-// Define a more specific type for the 3D Map HTML Element, including the correct center property
+// Define a more specific TypeScript type for the 3D Map HTML Element
 interface Map3DElement extends HTMLElement {
-  center: { lat: number; lng: number; altitude: number };
+  center: { lat: number; lng: number; altitude: number; };
   defaultUIDisabled: boolean;
   tilt: number;
   heading: number;
   range: number; // Used to control camera distance
 }
 
-// Update the global JSX namespace for TypeScript
+// Update the global JSX namespace to make TypeScript recognize the custom element
 declare global {
   namespace JSX {
     interface IntrinsicElements {
@@ -33,69 +33,48 @@ export default function MapDisplay({ data }: { data: MapData }) {
   const mapRef = useRef<Map3DElement>(null);
 
   useEffect(() => {
-    if (!data?.location) return;
+    // Exit if the map element isn't ready or if there's no location data
+    if (!mapRef.current || !data?.location) return;
 
-    const initStaticMap = () => {
-      if (!mapRef.current) return;
-
-      const lat = parseFloat(data.location.lat as any);
-      const lng = parseFloat(data.location.lng as any);
-
-      if (isNaN(lat) || isNaN(lng)) {
-        console.error("Invalid coordinates provided to MapDisplay.", { lat, lng });
-        return;
-      }
-
-      const map = mapRef.current;
-      
-      // Use the correct structure for center, including the hardcoded altitude.
-      const locationCoordinates = { lat, lng, altitude: 100 };
-
-      // Log the center location to the console
-      console.log("Rendering map with center location:", locationCoordinates);
-
-      // --- Set Initial Map Properties (No Animation) ---
-      map.center = locationCoordinates;
-      map.defaultUIDisabled = true;
-      map.tilt = 75;
-      map.heading = 330;
-      map.range = 100; // This controls camera distance/zoom, distinct from center altitude
-    };
+    const map = mapRef.current;
+    const { lat, lng } = data.location;
     
-    initStaticMap();
+    // Set the map's initial properties directly
+    map.center = { lat, lng, altitude: 0 };
+    map.range = 2000; // Sets the camera's distance from the center in meters
+    map.tilt = 75;    // Sets the camera's viewing angle
+    map.heading = 330;  // Sets the camera's compass direction
+    map.defaultUIDisabled = true; // Hides the default map controls
 
-  }, [data]);
+  }, [data]); // Rerun this effect if the `data` prop changes
 
   if (!data?.location) {
-    return null;
+    return null; // Don't render anything if there's no location data
   }
 
-  // Render JSX
+  // Render the component's JSX
   return (
     <div style={{ 
         backgroundColor: '#1a202c', 
         color: 'white', 
         borderRadius: '0.75rem', 
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        animation: 'fadeIn 0.5s ease-in-out'
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
     }}>
       <div style={{ padding: '1.5rem' }}>
         <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>
           Photorealistic 3D Map
         </h2>
         <p style={{ marginTop: '0.5rem', color: '#a0aec0' }}>
-          Displaying location: <b>{data.location.name}</b> ({data.location.lat.toFixed(4)}, {data.location.lng.toFixed(4)})
+          Displaying: <b>{data.location.name}</b>
         </p>
       </div>
       <div style={{ padding: '1.5rem', paddingTop: 0 }}>
         <gmp-map-3d 
+          map-id="21b670ae378cc0c7ef920de7" 
           ref={mapRef} 
           style={{ height: '500px', width: '100%', borderRadius: '0.5rem', background: '#e0e0e0' }}
         ></gmp-map-3d>
       </div>
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      `}} />
     </div>
   );
 }

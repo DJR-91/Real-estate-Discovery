@@ -33,7 +33,8 @@ import { generateItinerary } from "@/ai/flows/generate-itinerary";
 import { generateItineraryBanner } from "@/ai/flows/generate-itinerary-banner";
 import type { GenerateGroundedResponseOutput } from "@/ai/schemas/grounded-response-schema";
 import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-schema";
-import type { GenerateItineraryOutput, GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
+import type { GenerateItineraryOutput } from "@/ai/schemas/itinerary-schema";
+import type { GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
 import { ResultsDisplay } from "@/components/results-display";
 import { LoadingState } from "@/components/loading-state";
 import { Search, Youtube } from "lucide-react";
@@ -42,6 +43,10 @@ import { VideoResultDisplay } from "@/components/video-result-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
 import MapDisplay from "@/components/map-display";
 import type { Video } from "@/lib/types";
+import { findHotels } from "@/ai/flows/find-hotels";
+import type { FindHotelsOutput } from "@/ai/schemas/hotel-schema";
+import { HotelDisplay } from "@/components/hotel-display";
+
 
 const groundedSearchSchema = z.object({
   query: z.string().min(2, {
@@ -61,6 +66,7 @@ const videoSearchSchema = z.object({
 export interface ItineraryData {
   video: Video;
   itinerary: GenerateItineraryOutput['itinerary'];
+  destination: string;
   bannerUrl?: string;
 }
 
@@ -70,7 +76,7 @@ export type MapData = {
     lat: number;
     lng: number;
   };
-}
+};
 
 const travelStyles = [
   "Foodie",
@@ -90,9 +96,11 @@ export default function Home() {
     useState<SearchYoutubeVideosOutput | null>(null);
   const [itineraryResponse, setItineraryResponse] = 
     useState<ItineraryData | null>(null);
+  const [hotelResponse, setHotelResponse] = useState<FindHotelsOutput | null>(null);
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isItineraryLoading, setIsItineraryLoading] = useState(false);
+  const [isHotelLoading, setIsHotelLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
   const { toast } = useToast();
 
@@ -118,6 +126,7 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setHotelResponse(null);
     setMapData(null);
     try {
       const result = await generateGroundedResponse({ query: values.query });
@@ -139,6 +148,7 @@ export default function Home() {
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setHotelResponse(null);
     setMapData(null);
     try {
       const result = await searchYoutubeVideos({
@@ -189,6 +199,7 @@ export default function Home() {
     
     setIsItineraryLoading(true);
     setItineraryResponse(null);
+    setHotelResponse(null);
     setMapData(null);
 
     const itineraryInput: GenerateItineraryInput = {
@@ -213,6 +224,7 @@ export default function Home() {
       setItineraryResponse({
         video: video,
         itinerary: itineraryResult.itinerary,
+        destination: videoSearchValues.destination,
         bannerUrl: bannerResult.bannerUrl,
       });
       
@@ -249,14 +261,34 @@ export default function Home() {
     }
   };
 
+  const handleFindHotels = async (destination: string) => {
+    setIsHotelLoading(true);
+    setHotelResponse(null);
+    try {
+      const result = await findHotels({ destination });
+      setHotelResponse(result);
+    } catch (error) {
+      console.error("Failed to find hotels:", error);
+      toast({
+        variant: "destructive",
+        title: "Hotel Search Failed",
+        description: "We couldn't find hotels for this destination. Please try again later.",
+      });
+    } finally {
+      setIsHotelLoading(false);
+    }
+  };
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
+    setHotelResponse(null);
     setMapData(null);
     setIsLoading(false);
     setIsItineraryLoading(false);
+    setIsHotelLoading(false);
     groundedSearchForm.reset();
     videoSearchForm.reset();
   };
@@ -407,7 +439,11 @@ export default function Home() {
             )
           ) : activeTab === "video" ? (
             itineraryResponse ? (
-              <ItineraryDisplay data={itineraryResponse} />
+              <ItineraryDisplay 
+                data={itineraryResponse} 
+                onFindHotels={handleFindHotels}
+                isHotelLoading={isHotelLoading}
+              />
             ) : videoResponse ? (
               <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
             ) : (
@@ -419,11 +455,18 @@ export default function Home() {
             )
           ) : null}
           
-          {mapData && (
+          {mapData && !isItineraryLoading && (
             <div className="pt-8">
               <MapDisplay data={mapData} />
             </div>
           )}
+
+          {isHotelLoading ? (
+            <LoadingState />
+          ) : hotelResponse ? (
+            <HotelDisplay data={hotelResponse} />
+          ) : null }
+
         </div>
       </div>
     </main>
