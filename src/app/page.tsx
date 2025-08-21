@@ -46,6 +46,9 @@ import type { Video } from "@/lib/types";
 import { findHotels } from "@/ai/flows/find-hotels";
 import type { FindHotelsOutput } from "@/ai/schemas/hotel-schema";
 import { HotelDisplay } from "@/components/hotel-display";
+import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
+import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
+import { EventsDisplay } from "@/components/events-display";
 
 
 const groundedSearchSchema = z.object({
@@ -97,10 +100,12 @@ export default function Home() {
   const [itineraryResponse, setItineraryResponse] = 
     useState<ItineraryData | null>(null);
   const [hotelResponse, setHotelResponse] = useState<FindHotelsOutput | null>(null);
+  const [eventsResponse, setEventsResponse] = useState<FindTrendyEventsOutput | null>(null);
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isItineraryLoading, setIsItineraryLoading] = useState(false);
   const [isHotelLoading, setIsHotelLoading] = useState(false);
+  const [isEventsLoading, setIsEventsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
   const { toast } = useToast();
 
@@ -127,6 +132,7 @@ export default function Home() {
     setVideoResponse(null);
     setItineraryResponse(null);
     setHotelResponse(null);
+    setEventsResponse(null);
     setMapData(null);
     try {
       const result = await generateGroundedResponse({ query: values.query });
@@ -149,6 +155,7 @@ export default function Home() {
     setVideoResponse(null);
     setItineraryResponse(null);
     setHotelResponse(null);
+    setEventsResponse(null);
     setMapData(null);
     try {
       const result = await searchYoutubeVideos({
@@ -200,6 +207,7 @@ export default function Home() {
     setIsItineraryLoading(true);
     setItineraryResponse(null);
     setHotelResponse(null);
+    setEventsResponse(null);
     setMapData(null);
 
     const itineraryInput: GenerateItineraryInput = {
@@ -279,16 +287,36 @@ export default function Home() {
     }
   };
 
+  const handleFindEvents = async (destination: string, videoTitle: string) => {
+    setIsEventsLoading(true);
+    setEventsResponse(null);
+    try {
+      const result = await findTrendyEvents({ destination, videoTitle });
+      setEventsResponse(result);
+    } catch (error) {
+      console.error("Failed to find events:", error);
+      toast({
+        variant: "destructive",
+        title: "Event Search Failed",
+        description: "We couldn't find any trendy events for this destination. Please try again later.",
+      });
+    } finally {
+      setIsEventsLoading(false);
+    }
+  }
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setGroundedResponse(null);
     setVideoResponse(null);
     setItineraryResponse(null);
     setHotelResponse(null);
+    setEventsResponse(null);
     setMapData(null);
     setIsLoading(false);
     setIsItineraryLoading(false);
     setIsHotelLoading(false);
+    setIsEventsLoading(false);
     groundedSearchForm.reset();
     videoSearchForm.reset();
   };
@@ -443,6 +471,8 @@ export default function Home() {
                 data={itineraryResponse} 
                 onFindHotels={handleFindHotels}
                 isHotelLoading={isHotelLoading}
+                onFindEvents={handleFindEvents}
+                isEventsLoading={isEventsLoading}
               />
             ) : videoResponse ? (
               <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
@@ -461,11 +491,9 @@ export default function Home() {
             </div>
           )}
 
-          {isHotelLoading ? (
-            <LoadingState />
-          ) : hotelResponse ? (
-            <HotelDisplay data={hotelResponse} />
-          ) : null }
+          {isHotelLoading ? <LoadingState /> : hotelResponse ? <HotelDisplay data={hotelResponse} /> : null }
+
+          {isEventsLoading ? <LoadingState /> : eventsResponse ? <EventsDisplay data={eventsResponse} /> : null}
 
         </div>
       </div>

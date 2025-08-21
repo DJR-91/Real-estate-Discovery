@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader } from "lucide-react";
+import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper } from "lucide-react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 
@@ -17,6 +17,8 @@ interface ItineraryDisplayProps {
   data: ItineraryData;
   onFindHotels: (destination: string) => void;
   isHotelLoading: boolean;
+  onFindEvents: (destination: string, videoTitle: string) => void;
+  isEventsLoading: boolean;
 }
 
 const locationIcons: { [key: string]: React.ReactNode } = {
@@ -40,7 +42,7 @@ function getIconForLocation(name: string): React.ReactNode {
   return locationIcons.default;
 }
 
-export function ItineraryDisplay({ data, onFindHotels, isHotelLoading }: ItineraryDisplayProps) {
+export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEvents, isEventsLoading }: ItineraryDisplayProps) {
   const { video, itinerary, bannerUrl, destination } = data;
 
   return (
@@ -127,8 +129,8 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading }: Itinera
             </div>
           </div>
         </CardContent>
-        <CardFooter className="bg-muted/50 p-6">
-            <div className="w-full">
+        <CardFooter className="bg-muted/50 p-6 flex-wrap gap-4">
+            <div className="w-full md:w-auto">
                 <h3 className="font-headline text-xl text-primary mb-2">Ready to Book?</h3>
                 <p className="text-muted-foreground mb-4">Find hotels and places to stay at your destination.</p>
                 <Button onClick={() => onFindHotels(destination)} disabled={isHotelLoading}>
@@ -138,6 +140,18 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading }: Itinera
                         <Hotel className="mr-2 h-4 w-4" />
                     )}
                     Find Hotels in {destination}
+                </Button>
+            </div>
+            <div className="w-full md:w-auto">
+                <h3 className="font-headline text-xl text-primary mb-2">What's Happening?</h3>
+                <p className="text-muted-foreground mb-4">Discover trendy, upcoming events at your destination.</p>
+                <Button onClick={() => onFindEvents(destination, video.title)} disabled={isEventsLoading}>
+                    {isEventsLoading ? (
+                        <Loader className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <PartyPopper className="mr-2 h-4 w-4" />
+                    )}
+                    Find Trendy Events
                 </Button>
             </div>
         </CardFooter>
