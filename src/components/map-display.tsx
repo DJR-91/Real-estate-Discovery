@@ -28,7 +28,6 @@ export default function MapDisplay({ data }: { data: MapData }) {
       const map = mapRef.current;
 
       try {
-        const { MapMode } = await google.maps.importLibrary("maps3d") as google.maps.Maps3DLibrary;
         const locationCoordinates = { lat: data.location.lat, lng: data.location.lng };
 
         // Define the camera state for the animations
@@ -41,7 +40,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
 
         // Set initial properties directly on the element
         map.center = locationCoordinates;
-        map.mode = MapMode.SATELLITE;
+        map.mode = "satellite";
         map.defaultUIDisabled = true;
         map.tilt = 75;
         map.heading = 270;
