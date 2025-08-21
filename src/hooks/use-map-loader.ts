@@ -7,7 +7,7 @@ export function useMapLoader() {
   useEffect(() => {
     const loader = new Loader({
       apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-      version: "weekly",
+      version: "beta",
       libraries: ["maps3d", "places"],
     });
 
