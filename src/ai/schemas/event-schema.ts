@@ -1,25 +1,21 @@
-/**
- * @fileOverview Schemas for the trendy event finding flow.
- */
-
 import { z } from 'genkit';
 
-// Input schema for the event finding flow
+// Input schema for finding events
 export const FindTrendyEventsInputSchema = z.object({
-  destination: z.string().describe('The destination city to search for events in (e.g., "Tokyo").'),
-  videoSummary: z.string().describe('The summary of the YouTube video for context.'),
-});
-export type FindTrendyEventsInput = z.infer<typeof FindTrendyEventsInputSchema>;
-
-// Schema for a single event
-export const EventSchema = z.object({
-  name: z.string().describe('The name of the event.'),
-  description: z.string().describe('A brief, helpful description of the event.'),
-  url: z.string().url().describe('The source URL for more information about the event.'),
+  destination: z.string().describe('The city or location to search for events.'),
+  videoSummary: z.string().optional().describe('An optional summary from a travel video to provide context.'),
 });
 
-// Output schema containing a list of events
+// Output schema for the list of events
 export const FindTrendyEventsOutputSchema = z.object({
-  events: z.array(EventSchema).describe('A list of up to 5 recommended trendy and future events.'),
+  events: z.array(z.object({
+      name: z.string().describe("The official name of the event."),
+      description: z.string().describe("A concise summary of the event and its appeal to tourists."),
+      url: z.string().url().describe("A direct URL to a webpage with more information."),
+    }))
+    .describe("A list of trendy, upcoming events."),
 });
+
+// TypeScript types derived from the Zod schemas
+export type FindTrendyEventsInput = z.infer<typeof FindTrendyEventsInputSchema>;
 export type FindTrendyEventsOutput = z.infer<typeof FindTrendyEventsOutputSchema>;

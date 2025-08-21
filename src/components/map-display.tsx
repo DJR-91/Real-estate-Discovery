@@ -38,14 +38,38 @@ export default function MapDisplay({ data }: { data: MapData }) {
 
     const map = mapRef.current;
     const { lat, lng } = data.location;
-    
+
+  /*  const {Marker3DElement} = await google.maps.importLibrary("maps3d");
+
+    const marker = new Marker3DElement({
+      position: { lat, lng, altitude: 100 },
+      altitudeMode: 'RELATIVE_TO_MESH',
+      extruded: true,
+      label : "POI"
+  });
+    map.append(marker);
+*/
     // Set the map's initial properties directly
     map.center = { lat, lng, altitude: 0 };
-    map.range = 2000; // Sets the camera's distance from the center in meters
+    map.range = 1000; // Sets the camera's distance from the center in meters
     map.tilt = 75;    // Sets the camera's viewing angle
     map.heading = 330;  // Sets the camera's compass direction
     map.defaultUIDisabled = true; // Hides the default map controls
+    map.mode = "SATELLITE";
 
+
+    map.flyCameraAround({
+      camera: {
+          center: { lat, lng, altitude: 0 },
+          tilt: 75,
+          range: 1000,
+          heading: 330,
+      },
+      durationMillis: 250000,
+      rounds: 5
+  });
+
+  
   }, [data]); // Rerun this effect if the `data` prop changes
 
   if (!data?.location) {
@@ -72,7 +96,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
         <gmp-map-3d 
           map-id="21b670ae378cc0c7ef920de7" 
           ref={mapRef} 
-          style={{ height: '500px', width: '100%', borderRadius: '0.5rem', background: '#e0e0e0' }}
+          style={{ height: '500px', width: '100%', borderRadius: '0.5rem', background: '#fffff' }}
         ></gmp-map-3d>
       </div>
     </div>
