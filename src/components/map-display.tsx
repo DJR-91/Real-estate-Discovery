@@ -61,7 +61,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
         map.defaultUIDisabled = true;
         map.tilt = 75;
         map.heading = 330;
-        map.range = 1000; // altitude
+        map.range = 100; // altitude
         
       } catch (error) {
           console.error("Failed to initialize Google Maps 3D:", error);
