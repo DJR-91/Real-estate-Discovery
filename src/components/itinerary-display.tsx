@@ -129,10 +129,10 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEve
             </div>
           </div>
         </CardContent>
-        <CardFooter className="bg-muted/50 p-6 flex-wrap gap-4">
-            <div className="w-full md:w-auto">
+        <CardFooter className="bg-muted/50 p-6 flex-wrap justify-center gap-8">
+            <div className="w-full md:w-auto text-center mx-auto">
                 <h3 className="font-headline text-xl text-primary mb-2">Ready to Book?</h3>
-                <p className="text-muted-foreground mb-4">Find hotels and places to stay at your destination.</p>
+                <p className="text-muted-foreground mb-4">Find hotels and places near the recommended itinerary.</p>
                 <Button onClick={() => onFindHotels(destination)} disabled={isHotelLoading}>
                     {isHotelLoading ? (
                         <Loader className="mr-2 h-4 w-4 animate-spin" />
@@ -142,7 +142,7 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEve
                     Find Hotels in {destination}
                 </Button>
             </div>
-            <div className="w-full md:w-auto">
+            <div className="w-full md:w-auto text-center mx-auto">
                 <h3 className="font-headline text-xl text-primary mb-2">What's Happening?</h3>
                 <p className="text-muted-foreground mb-4">Discover trendy, upcoming events at your destination.</p>
                 <Button onClick={() => onFindEvents(destination, videoSummary)} disabled={isEventsLoading}>

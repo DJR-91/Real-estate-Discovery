@@ -34,13 +34,11 @@ const findTrendyEventsFlow = ai.defineFlow(
       
             Theme:`,
             output: {
-                // ✅ FIX 1: Allow the model to return null if it can't determine a theme.
                 schema: z.string().nullable(),
             },
         });
         
         const potentialTheme = themeResponse.output;
-        // ✅ FIX 2: Check for a valid, non-empty string before assigning the new theme.
         if (potentialTheme && potentialTheme.trim() !== '') {
             theme = potentialTheme;
         }
