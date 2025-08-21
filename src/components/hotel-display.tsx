@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import Image from "next/image";
 import { Building, MapPin, Play } from "lucide-react";
@@ -28,9 +27,13 @@ export function HotelDisplay({ data }: HotelDisplayProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="text-center">
+      <div className="text-center mb-6">
         <h2 className="font-headline text-3xl text-primary">Recommended Hotels</h2>
         <p className="text-muted-foreground">A selection of hotels at your destination.</p>
+        <Button onClick={handlePlayAudio} variant="outline" className="mt-4">
+          <Play className="mr-2 h-4 w-4" />
+          AI Agent for Early Check Request
+        </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data.hotels.map((hotel, index) => (
@@ -61,12 +64,6 @@ export function HotelDisplay({ data }: HotelDisplayProps) {
                 <span>{hotel.address}</span>
               </p>
             </CardContent>
-            <CardFooter>
-              <Button onClick={handlePlayAudio} variant="outline" className="w-full">
-                <Play className="mr-2 h-4 w-4" />
-                Play Audio Clip
-              </Button>
-            </CardFooter>
           </Card>
         ))}
       </div>
