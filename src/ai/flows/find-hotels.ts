@@ -36,7 +36,7 @@ const findHotelsFlow = ai.defineFlow(
     
     // Step 2: Use Gemini to generate a description for each hotel
     const llmResponse = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-2.5-flash-lite',
       output: {
         schema: FindHotelsOutputSchema,
       },

@@ -30,7 +30,7 @@ const generateGroundedResponseFlow = ai.defineFlow(
     };
 
     const response = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
+        model: 'googleai/gemini-2.5-flash-lite',
         prompt: input.query,
         config
     });

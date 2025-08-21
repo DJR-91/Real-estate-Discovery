@@ -34,7 +34,7 @@ const generateLocationDescriptionFlow = ai.defineFlow(
     const prompt = `Generate a rich, engaging, and descriptive paragraph for the following location, suitable for a travel app. Focus on what makes it special. Location: ${input.locationName}.`;
 
     const result = await ai.generate({
-      model: 'googleai/gemini-2.5-flash',
+      model: 'googleai/gemini-2.5-flash-lite',
       prompt: prompt,
       output: { schema: GenerateLocationDescriptionOutputSchema },
     });
