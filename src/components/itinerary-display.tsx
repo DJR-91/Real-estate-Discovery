@@ -14,7 +14,6 @@ import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper } f
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { WeatherDisplay } from "./weather-display";
 
 interface ItineraryDisplayProps {
   data: ItineraryData;
@@ -46,7 +45,7 @@ function getIconForLocation(name: string): React.ReactNode {
 }
 
 export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEvents, isEventsLoading }: ItineraryDisplayProps) {
-  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint, weather, isWeatherLoading } = data;
+  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -75,7 +74,6 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEve
                 </a>
               </CardDescription>
             </div>
-            <WeatherDisplay weather={weather} isLoading={isWeatherLoading} />
           </div>
         </CardHeader>
         <CardContent>

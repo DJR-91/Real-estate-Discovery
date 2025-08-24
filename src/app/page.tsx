@@ -49,9 +49,9 @@ import type { FindHotelsOutput } from "@/ai/schemas/hotel-schema";
 import { HotelDisplay } from "@/components/hotel-display";
 import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
 import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
-import { EventsDisplay } from "@/components/events-display";
 import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
+import { VideoResultHeader } from "@/components/video-result-header";
 
 
 const groundedSearchSchema = z.object({
@@ -77,8 +77,6 @@ export interface ItineraryData {
   bannerUrl?: string;
   isBannerLoading: boolean;
   bannerAiHint?: string;
-  weather?: GetWeatherOutput | null;
-  isWeatherLoading: boolean;
 }
 
 export type MapData = {
@@ -109,11 +107,13 @@ export default function Home() {
     useState<ItineraryData | null>(null);
   const [hotelResponse, setHotelResponse] = useState<FindHotelsOutput | null>(null);
   const [eventsResponse, setEventsResponse] = useState<FindTrendyEventsOutput | null>(null);
+  const [weatherResponse, setWeatherResponse] = useState<GetWeatherOutput | null>(null);
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isItineraryLoading, setIsItineraryLoading] = useState(false);
   const [isHotelLoading, setIsHotelLoading] = useState(false);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
+  const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
   const { toast } = useToast();
 
@@ -141,6 +141,7 @@ export default function Home() {
     setItineraryResponse(null);
     setHotelResponse(null);
     setEventsResponse(null);
+    setWeatherResponse(null);
     setMapData(null);
     try {
       const result = await generateGroundedResponse({ query: values.query });
@@ -157,6 +158,19 @@ export default function Home() {
     }
   }
 
+  const handleFetchWeather = async (location: string) => {
+    setIsWeatherLoading(true);
+    try {
+      const weatherResult = await getWeather({ location });
+      setWeatherResponse(weatherResult);
+    } catch (error) {
+      console.error("Failed to fetch weather:", error);
+      // Don't show a toast for weather errors, as the UI handles the "unavailable" state.
+    } finally {
+      setIsWeatherLoading(false);
+    }
+  }
+
   async function onVideoSearchSubmit(values: z.infer<typeof videoSearchSchema>) {
     setIsLoading(true);
     setGroundedResponse(null);
@@ -164,13 +178,18 @@ export default function Home() {
     setItineraryResponse(null);
     setHotelResponse(null);
     setEventsResponse(null);
+    setWeatherResponse(null);
     setMapData(null);
     try {
-      const result = await searchYoutubeVideos({
-        destination: values.destination,
-        travelType: values.travelType,
-      });
-      setVideoResponse(result);
+      // Fetch videos and weather in parallel
+      const [videoResult] = await Promise.all([
+        searchYoutubeVideos({
+          destination: values.destination,
+          travelType: values.travelType,
+        }),
+        handleFetchWeather(values.destination),
+      ]);
+      setVideoResponse(videoResult);
     } catch (error) {
       console.error(error);
       toast({
@@ -200,18 +219,6 @@ export default function Home() {
         });
     });
   };
-
-  const handleFetchWeather = async (location: string) => {
-    setItineraryResponse(prev => prev ? ({ ...prev, isWeatherLoading: true }) : null);
-    try {
-      const weatherResult = await getWeather({ location });
-      setItineraryResponse(prev => prev ? ({ ...prev, weather: weatherResult, isWeatherLoading: false }) : null);
-    } catch (error) {
-      console.error("Failed to fetch weather:", error);
-      // Don't show a toast for weather errors, as the UI handles the "unavailable" state.
-      setItineraryResponse(prev => prev ? ({ ...prev, isWeatherLoading: false }) : null);
-    }
-  }
 
   const handleGenerateItinerary = async (video: Video) => {
     const videoSearchValues = videoSearchForm.getValues();
@@ -254,11 +261,8 @@ export default function Home() {
         videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
         isBannerLoading: true,
-        isWeatherLoading: true,
       });
 
-      // Start fetching weather in the background
-      handleFetchWeather(videoSearchValues.destination);
 
       // Find the first location with a valid address to show on the map.
       let mapLocationFound = false;
@@ -341,7 +345,6 @@ export default function Home() {
         isBannerLoading: false,
         bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3',
         bannerAiHint: 'tokyo tower',
-        isWeatherLoading: false,
       });
       
       toast({
@@ -417,11 +420,13 @@ export default function Home() {
     setItineraryResponse(null);
     setHotelResponse(null);
     setEventsResponse(null);
+    setWeatherResponse(null);
     setMapData(null);
     setIsLoading(false);
     setIsItineraryLoading(false);
     setIsHotelLoading(false);
     setIsEventsLoading(false);
+    setIsWeatherLoading(false);
     groundedSearchForm.reset();
     videoSearchForm.reset();
   };
@@ -580,7 +585,14 @@ export default function Home() {
                 isEventsLoading={isEventsLoading}
               />
             ) : videoResponse ? (
-              <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
+              <>
+                <VideoResultHeader 
+                  destination={videoSearchForm.getValues("destination")} 
+                  weather={weatherResponse}
+                  isLoading={isWeatherLoading}
+                />
+                <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
+              </>
             ) : (
               <Card className="text-center p-12 border-dashed flex items-center justify-center h-full max-w-4xl mx-auto">
                 <h2 className="text-xl font-medium text-muted-foreground">

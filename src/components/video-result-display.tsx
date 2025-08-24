@@ -1,3 +1,4 @@
+
 import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-schema";
 import {
   Card,
@@ -19,10 +20,6 @@ interface VideoResultDisplayProps {
 export function VideoResultDisplay({ data, onGenerateItinerary }: VideoResultDisplayProps) {
   return (
     <div className="animate-in fade-in duration-500">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-headline text-primary">Video Results</h2>
-        <p className="text-sm text-muted-foreground">Select a video to generate an itinerary</p>
-      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {data.videos.map((video) => (
           <Card key={video.id} className="h-full flex flex-col justify-between hover:border-primary/50 transition-colors shadow-lg">
