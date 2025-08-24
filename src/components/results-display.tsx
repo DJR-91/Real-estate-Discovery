@@ -3,7 +3,6 @@ import type { GenerateGroundedResponseOutput } from '@/ai/schemas/grounded-respo
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -15,28 +14,10 @@ interface ResultsDisplayProps {
 }
 
 export function ResultsDisplay({ data }: ResultsDisplayProps) {
-  const { llmResponse, pointsOfInterest } = data;
+  const { pointsOfInterest } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Card for the original LLM response */}
-      <Card className="shadow-lg border-primary/20">
-        <CardHeader>
-          <CardTitle className="font-headline text-3xl text-primary">
-            Grounded Response
-          </CardTitle>
-          <CardDescription>
-            Here is the AI's summary based on your query, grounded in Google
-            Search.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-lg leading-relaxed whitespace-pre-wrap">
-            {llmResponse}
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Section for the extracted Points of Interest */}
       {pointsOfInterest && pointsOfInterest.length > 0 && (
         <div>
