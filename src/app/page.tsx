@@ -288,7 +288,7 @@ export default function Home() {
           description: "Displaying a placeholder image.",
         });
         // Update the state with a placeholder banner and set loading to false
-        setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: 'https://placehold.co/1200x400.png', bannerAiHint: 'tokyo tower', isBannerLoading: false }) : null);
+        setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3', bannerAiHint: 'tokyo tower', isBannerLoading: false }) : null);
       }
 
     } catch (error) {
@@ -319,7 +319,7 @@ export default function Home() {
         videoSummary: "This is a sample itinerary for a foodie tour in Tokyo. We couldn't generate one from the selected video, but you can explore the app's features with this mock data!",
         destination: "Tokyo",
         isBannerLoading: false,
-        bannerUrl: 'https://placehold.co/1200x400.png',
+        bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3',
         bannerAiHint: 'tokyo tower',
       });
       
@@ -562,3 +562,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
