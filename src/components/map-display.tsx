@@ -18,6 +18,8 @@ interface Map3DElement extends HTMLElement {
   tilt: number;
   heading: number;
   range: number; // Used to control camera distance
+  mode: string;
+  flyCameraAround: (options: { camera: { center: { lat: number; lng: number; altitude: number; }; tilt: number; range: number; heading: number; }; durationMillis: number; rounds: number; }) => void;
 }
 
 // Update the global JSX namespace to make TypeScript recognize the custom element
@@ -79,8 +81,8 @@ export default function MapDisplay({ data }: { data: MapData }) {
   // Render the component's JSX
   return (
     <div style={{ 
-        backgroundColor: '#1a202c', 
-        color: 'white', 
+        backgroundColor: '#ffffff', 
+        color: '#1a202c', 
         borderRadius: '0.75rem', 
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
     }}>
@@ -88,7 +90,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
         <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>
           Photorealistic 3D Map
         </h2>
-        <p style={{ marginTop: '0.5rem', color: '#a0aec0' }}>
+        <p style={{ marginTop: '0.5rem', color: '#718096' }}>
           Displaying: <b>{data.location.name}</b>
         </p>
       </div>
@@ -96,7 +98,7 @@ export default function MapDisplay({ data }: { data: MapData }) {
         <gmp-map-3d 
           map-id="21b670ae378cc0c7ef920de7" 
           ref={mapRef} 
-          style={{ height: '500px', width: '100%', borderRadius: '0.5rem', background: '#fffff' }}
+          style={{ height: '500px', width: '100%', borderRadius: '0.5rem', background: '#e2e8f0' }}
         ></gmp-map-3d>
       </div>
     </div>
