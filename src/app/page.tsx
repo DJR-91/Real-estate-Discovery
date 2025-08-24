@@ -50,6 +50,8 @@ import { HotelDisplay } from "@/components/hotel-display";
 import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
 import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
 import { EventsDisplay } from "@/components/events-display";
+import { getWeather } from "@/ai/flows/get-weather";
+import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 
 
 const groundedSearchSchema = z.object({
@@ -75,6 +77,8 @@ export interface ItineraryData {
   bannerUrl?: string;
   isBannerLoading: boolean;
   bannerAiHint?: string;
+  weather?: GetWeatherOutput;
+  isWeatherLoading: boolean;
 }
 
 export type MapData = {
@@ -197,6 +201,22 @@ export default function Home() {
     });
   };
 
+  const handleFetchWeather = async (location: string) => {
+    setItineraryResponse(prev => prev ? ({ ...prev, isWeatherLoading: true }) : null);
+    try {
+      const weatherResult = await getWeather({ location });
+      setItineraryResponse(prev => prev ? ({ ...prev, weather: weatherResult, isWeatherLoading: false }) : null);
+    } catch (error) {
+      console.error("Failed to fetch weather:", error);
+      toast({
+        variant: "destructive",
+        title: "Weather Not Available",
+        description: "Could not retrieve weather data for the destination.",
+      });
+      setItineraryResponse(prev => prev ? ({ ...prev, isWeatherLoading: false }) : null);
+    }
+  }
+
   const handleGenerateItinerary = async (video: Video) => {
     const videoSearchValues = videoSearchForm.getValues();
     if (!videoSearchValues.destination || !videoSearchValues.travelType) {
@@ -231,14 +251,18 @@ export default function Home() {
       // Generate itinerary first
       const itineraryResult = await generateItinerary(itineraryInput);
       
-      // Show itinerary immediately, with a loading state for the banner
+      // Show itinerary immediately, with a loading state for other elements
       setItineraryResponse({
         video: video,
         itinerary: itineraryResult.itinerary,
         videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
         isBannerLoading: true,
+        isWeatherLoading: true,
       });
+
+      // Start fetching weather in the background
+      handleFetchWeather(videoSearchValues.destination);
 
       // Find the first location with a valid address to show on the map.
       let mapLocationFound = false;
@@ -321,6 +345,7 @@ export default function Home() {
         isBannerLoading: false,
         bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3',
         bannerAiHint: 'tokyo tower',
+        isWeatherLoading: false,
       });
       
       toast({

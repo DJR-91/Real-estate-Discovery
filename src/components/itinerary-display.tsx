@@ -14,6 +14,7 @@ import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper } f
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
+import { WeatherDisplay } from "./weather-display";
 
 interface ItineraryDisplayProps {
   data: ItineraryData;
@@ -45,7 +46,7 @@ function getIconForLocation(name: string): React.ReactNode {
 }
 
 export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEvents, isEventsLoading }: ItineraryDisplayProps) {
-  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint } = data;
+  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint, weather, isWeatherLoading } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -64,13 +65,18 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEve
           )}
         </div>
         <CardHeader>
-          <CardTitle className="font-headline text-3xl text-primary">Your 3-Day Itinerary</CardTitle>
-          <CardDescription>
-            Inspired by the YouTube video:{" "}
-            <a href={video.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
-              {video.title}
-            </a>
-          </CardDescription>
+          <div className="flex justify-between items-start gap-4">
+            <div>
+              <CardTitle className="font-headline text-3xl text-primary">Your 3-Day Itinerary</CardTitle>
+              <CardDescription>
+                Inspired by the YouTube video:{" "}
+                <a href={video.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
+                  {video.title}
+                </a>
+              </CardDescription>
+            </div>
+            <WeatherDisplay weather={weather} isLoading={isWeatherLoading} />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
