@@ -146,7 +146,6 @@ export default function Home() {
     setWeatherResponse(null);
     setMapData(null);
     try {
-      handleFetchWeather("Tokyo");
       const result = await generateGroundedResponse({ query: values.query });
       setGroundedResponse(result);
     } catch (error) {
@@ -169,12 +168,6 @@ export default function Home() {
       setWeatherResponse(weatherResult);
     } catch (error) {
       console.error("Failed to fetch weather:", error);
-      // Errors are now handled by the flow's fallback, but we keep this for unexpected client-side issues.
-      toast({
-        variant: "destructive",
-        title: "Weather Error",
-        description: "An unexpected error occurred while fetching weather.",
-      });
     } finally {
       setIsWeatherLoading(false);
     }
@@ -190,10 +183,14 @@ export default function Home() {
     setWeatherResponse(null);
     setMapData(null);
     try {
-      const videoResult = await searchYoutubeVideos({
-        destination: values.destination,
-        travelType: values.travelType,
-      });
+      // Fetch videos and weather in parallel
+      const [videoResult] = await Promise.all([
+        searchYoutubeVideos({
+          destination: values.destination,
+          travelType: values.travelType,
+        }),
+        handleFetchWeather(values.destination),
+      ]);
       setVideoResponse(videoResult);
     } catch (error) {
       console.error(error);
@@ -241,7 +238,6 @@ export default function Home() {
     setHotelResponse(null);
     setEventsResponse(null);
     setMapData(null);
-    setWeatherResponse(null);
 
     const itineraryInput: GenerateItineraryInput = {
       videoId: video.id,
@@ -257,11 +253,8 @@ export default function Home() {
     }
 
     try {
-      // Fetch weather and itinerary in parallel
-      const [itineraryResult] = await Promise.all([
-        generateItinerary(itineraryInput),
-        handleFetchWeather(videoSearchValues.destination),
-      ]);
+      // Fetch itinerary
+      const itineraryResult = await generateItinerary(itineraryInput);
       
       // Show itinerary immediately, with a loading state for other elements
       setItineraryResponse({
@@ -581,7 +574,6 @@ export default function Home() {
                     <VideoResultHeader
                       destination={"Places of Interest"}
                     />
-                    <WeatherDisplay weather={weatherResponse} isLoading={isWeatherLoading} />
                 </div>
                 <ResultsDisplay data={groundedResponse} />
               </>
@@ -600,13 +592,13 @@ export default function Home() {
                 isHotelLoading={isHotelLoading}
                 onFindEvents={handleFindEvents}
                 isEventsLoading={isEventsLoading}
-                weather={weatherResponse}
-                isWeatherLoading={isWeatherLoading}
               />
             ) : videoResponse ? (
               <>
                 <VideoResultHeader 
-                  destination={videoSearchForm.getValues("destination")} 
+                  destination={videoSearchForm.getValues("destination")}
+                  weather={weatherResponse}
+                  isWeatherLoading={isWeatherLoading}
                 />
                 <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
               </>

@@ -4,9 +4,11 @@ import { WeatherDisplay } from "./weather-display";
 
 interface VideoResultHeaderProps {
   destination: string;
+  weather: GetWeatherOutput | null;
+  isWeatherLoading: boolean;
 }
 
-export function VideoResultHeader({ destination }: VideoResultHeaderProps) {
+export function VideoResultHeader({ destination, weather, isWeatherLoading }: VideoResultHeaderProps) {
   const title = destination === "Places of Interest" 
     ? "Places of Interest"
     : `Video Results for ${destination}`;
@@ -16,11 +18,12 @@ export function VideoResultHeader({ destination }: VideoResultHeaderProps) {
     : "Select a video to generate an itinerary";
 
   return (
-    <div className="flex justify-between items-center mb-4 animate-in fade-in duration-500">
+    <div className="flex justify-between items-start mb-4 animate-in fade-in duration-500">
       <div>
         <h2 className="text-2xl font-headline text-primary">{title}</h2>
         <p className="text-sm text-muted-foreground">{subTitle}</p>
       </div>
+      <WeatherDisplay weather={weather} isLoading={isWeatherLoading} />
     </div>
   );
 }
