@@ -1,3 +1,4 @@
+
 import { Client, PlaceInputType, GeocodeResponse, GeocodeRequest, TextSearchRequest, Place } from "@googlemaps/google-maps-services-js";
 import { ai } from "@/ai/genkit";
 import { z } from "zod";
@@ -11,11 +12,13 @@ const findPlaceToolSchema = z.object({
 export const findPlaceTool = ai.defineTool(
     {
       name: 'findPlace',
-      description: 'Finds a place and returns its address and a photo.',
+      description: 'Finds a place and returns its address, photo, and rating.',
       inputSchema: findPlaceToolSchema,
       outputSchema: z.object({
         address: z.string().optional(),
         imageUrl: z.string().nullable().optional(),
+        rating: z.number().nullable().optional(),
+        userRatingCount: z.number().nullable().optional(),
       }),
     },
     async (input) => {
@@ -26,7 +29,7 @@ export const findPlaceTool = ai.defineTool(
           params: {
             input: query,
             inputtype: PlaceInputType.textQuery,
-            fields: ['place_id', 'formatted_address', 'name', 'photos'],
+            fields: ['place_id', 'formatted_address', 'name', 'photos', 'rating', 'user_ratings_total'],
             key: process.env.GOOGLE_MAPS_API_KEY!,
           },
         });
@@ -47,6 +50,8 @@ export const findPlaceTool = ai.defineTool(
         return {
           address: candidate.formatted_address,
           imageUrl,
+          rating: candidate.rating ?? null,
+          userRatingCount: candidate.user_ratings_total ?? null,
         };
       } catch (error) {
         console.error(`Google Maps API error for query "${query}":`, error);

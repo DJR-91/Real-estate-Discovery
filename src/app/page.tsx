@@ -32,7 +32,7 @@ import {
 } from "@/ai/flows/search-youtube-videos";
 import { generateItinerary } from "@/ai/flows/generate-itinerary";
 import { generateItineraryBanner } from "@/ai/flows/generate-itinerary-banner";
-import type { GenerateGroundedResponseOutput } from "@/ai/schemas/grounded-response-schema";
+import type { GenerateGroundedResponseOutput, PointOfInterest } from "@/ai/schemas/grounded-response-schema";
 import type { SearchYoutubeVideosOutput } from "@/ai/schemas/youtube-videos-schema";
 import type { GenerateItineraryOutput } from "@/ai/schemas/itinerary-schema";
 import type { GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
@@ -89,6 +89,7 @@ export type MapData = {
     lat: number;
     lng: number;
   };
+  place: PointOfInterest | null;
 };
 
 const travelStyles = [
@@ -168,10 +169,8 @@ export default function Home() {
     try {
       const weatherResult = await getWeather({ location });
       setItineraryResponse(prev => prev ? { ...prev, weather: weatherResult, isWeatherLoading: false } : null);
-      setWeatherResponse(weatherResult);
     } catch (error) {
       console.error("Failed to fetch weather:", error);
-      // Silently fail or set a default/mock state
       setItineraryResponse(prev => prev ? { ...prev, isWeatherLoading: false } : null);
     } finally {
       setIsWeatherLoading(false);
@@ -284,7 +283,8 @@ export default function Home() {
                   name: location.name,
                   lat: coords.lat,
                   lng: coords.lng,
-                }
+                },
+                place: location,
               });
               mapLocationFound = true;
               break; 

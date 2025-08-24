@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Schemas for the travel itinerary generation flow.
  */
@@ -26,6 +27,8 @@ export const ItineraryDaySchema = z.object({
 const LocationWithDetailsSchema = LocationSchema.extend({
   address: z.string().optional().describe('The full physical address of the location, if available.'),
   imageUrl: z.string().nullable().optional().describe("A URL to a photo of the location from the Google Places API."),
+  rating: z.number().nullable().optional().describe('The rating of the place, from 1 to 5.'),
+  userRatingCount: z.number().nullable().optional().describe('The total number of ratings.'),
 });
 
 const ItineraryDayWithDetailsSchema = ItineraryDaySchema.extend({

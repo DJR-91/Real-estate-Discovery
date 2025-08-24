@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -113,6 +114,8 @@ Present the output as a 3-day plan. Each day should have a creative title and a 
                 ...location,
                 address: place.address,
                 imageUrl: place.imageUrl,
+                rating: place.rating,
+                userRatingCount: place.userRatingCount,
               };
             } catch (error) {
               console.warn(`Could not find details for "${location.name}", skipping. Error:`, error);
@@ -121,6 +124,8 @@ Present the output as a 3-day plan. Each day should have a creative title and a 
                 ...location,
                 address: "Address not available",
                 imageUrl: null,
+                rating: null,
+                userRatingCount: null,
               };
             }
           })

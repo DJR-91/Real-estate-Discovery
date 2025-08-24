@@ -1,15 +1,9 @@
+
 "use client";
 
 import React, { useEffect, useRef } from 'react';
-
-// Define the type for the data you'll pass as a prop
-export type MapData = {
-  location: {
-    name: string;
-    lat: number;
-    lng: number;
-  };
-};
+import type { MapData } from '@/app/page';
+import { PlaceCard } from './place-card';
 
 // Define a more specific TypeScript type for the 3D Map HTML Element
 interface Map3DElement extends HTMLElement {
@@ -41,16 +35,6 @@ export default function MapDisplay({ data }: { data: MapData }) {
     const map = mapRef.current;
     const { lat, lng } = data.location;
 
-  /*  const {Marker3DElement} = await google.maps.importLibrary("maps3d");
-
-    const marker = new Marker3DElement({
-      position: { lat, lng, altitude: 100 },
-      altitudeMode: 'RELATIVE_TO_MESH',
-      extruded: true,
-      label : "POI"
-  });
-    map.append(marker);
-*/
     // Set the map's initial properties directly
     map.center = { lat, lng, altitude: 0 };
     map.range = 1000; // Sets the camera's distance from the center in meters
@@ -80,26 +64,26 @@ export default function MapDisplay({ data }: { data: MapData }) {
 
   // Render the component's JSX
   return (
-    <div style={{ 
-        backgroundColor: '#ffffff', 
-        color: '#1a202c', 
-        borderRadius: '0.75rem', 
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
-    }}>
-      <div style={{ padding: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold' }}>
+    <div className="bg-white rounded-lg shadow-lg text-gray-800">
+      <div className="p-6">
+        <h2 className="text-3xl font-bold font-headline text-primary">
           Photorealistic 3D Map
         </h2>
-        <p style={{ marginTop: '0.5rem', color: '#718096' }}>
+        <p className="mt-1 text-muted-foreground">
           Displaying: <b>{data.location.name}</b>
         </p>
       </div>
-      <div style={{ padding: '1.5rem', paddingTop: 0 }}>
-        <gmp-map-3d 
-          map-id="21b670ae378cc0c7ef920de7" 
-          ref={mapRef} 
-          style={{ height: '500px', width: '100%', borderRadius: '0.5rem', background: '#e2e8f0' }}
-        ></gmp-map-3d>
+      <div className="p-6 pt-0 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+            <gmp-map-3d 
+              map-id="21b670ae378cc0c7ef920de7" 
+              ref={mapRef} 
+              style={{ height: '500px', width: '100%', borderRadius: '0.5rem', background: '#e2e8f0' }}
+            ></gmp-map-3d>
+        </div>
+        <div className="md:col-span-1">
+            {data.place && <PlaceCard place={data.place} />}
+        </div>
       </div>
     </div>
   );

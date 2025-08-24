@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Schemas for the grounded response flow.
  */
@@ -26,7 +27,10 @@ const PointOfInterestSchema = z.object({
     .string()
     .nullable()
     .describe('A URL for a photo of the point of interest.'),
+  rating: z.number().nullable().optional().describe('The rating of the place, from 1 to 5.'),
+  userRatingCount: z.number().nullable().optional().describe('The total number of ratings.'),
 });
+export type PointOfInterest = z.infer<typeof PointOfInterestSchema>;
 
 export const GenerateGroundedResponseOutputSchema = z.object({
   llmResponse: z
