@@ -8,8 +8,8 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useMap3DCameraEvents, Map3DCameraProps } from '@/hooks/use-map-3d-camera-events';
 import { useCallbackRef, useDeepCompareEffect } from '@/hooks/utility-hooks';
 import '@/hooks/map-3d-types';
-import type { ItineraryDaySchema } from '@/ai/schemas/itinerary-schema';
 import type { GenerateItineraryOutput } from '@/ai/schemas/itinerary-schema';
+import { RoutesApi } from '@/services/routes-api';
 
 // The new reusable Map3D component logic, adapted from your provided code
 export type { Map3DCameraProps };
@@ -70,8 +70,10 @@ Map3D.displayName = "Map3D";
 // The main MapDisplay component that uses the new Map3D component
 export default function MapDisplay({ data, itinerary }: { data: MapData, itinerary: GenerateItineraryOutput['itinerary'] | null | undefined }) {
   const mapRef = useRef<google.maps.maps3d.Map3DElement>(null);
+  const maps3dLib = useMapsLibrary('maps3d');
   const markerLib = useMapsLibrary('marker');
   const [markers, setMarkers] = useState<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const polylineRef = useRef<google.maps.maps3d.Polyline3DElement | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || !data?.location) return;
@@ -132,42 +134,85 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
   };
 
   useEffect(() => {
-    if (!mapRef.current || !markerLib || !itinerary) {
+    if (!mapRef.current || !markerLib || !maps3dLib || !itinerary) {
       return;
     }
     const map = mapRef.current;
 
-    // Clear existing markers
+    // Clear existing elements
     markers.forEach(marker => marker.map = null);
+    if (polylineRef.current) {
+        polylineRef.current.remove();
+        polylineRef.current = null;
+    }
     const newMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
 
-    const processMarkers = async () => {
-        for (const day of itinerary) {
-            for (const location of day.locations) {
-              if (location.address && location.address !== "Address not available") {
-                const position = await geocodeAddress(location.address);
-                if (position) {
-                    const marker = new markerLib.AdvancedMarkerElement({
-                        map: map as unknown as google.maps.Map, // Cast since Map3D is not directly a Map
-                        position: position,
-                        title: location.name,
-                    });
-                    newMarkers.push(marker);
-                }
-              }
+    const processItinerary = async () => {
+        const locations = itinerary.flatMap(day => day.locations);
+        const geocodedLocations: google.maps.LatLngLiteral[] = [];
+
+        for (const location of locations) {
+          if (location.address && location.address !== "Address not available") {
+            const position = await geocodeAddress(location.address);
+            if (position) {
+                geocodedLocations.push(position);
+                const marker = new markerLib.AdvancedMarkerElement({
+                    map: map as unknown as google.maps.Map, // Cast since Map3D is not directly a Map
+                    position: position,
+                    title: location.name,
+                });
+                newMarkers.push(marker);
             }
+          }
         }
         setMarkers(newMarkers);
+
+        if(geocodedLocations.length > 1) {
+            const apiClient = new RoutesApi(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!);
+            const origin = geocodedLocations[0];
+            const destination = geocodedLocations[geocodedLocations.length - 1];
+            const waypoints = geocodedLocations.slice(1, -1);
+
+            try {
+                const res = await apiClient.computeRoutes(origin, destination, waypoints);
+                const [route] = res.routes;
+                const { geoJsonLinestring } = route.polyline ?? {};
+                
+                if(geoJsonLinestring) {
+                    const coordinates = geoJsonLinestring.coordinates.map(([lng, lat]) => ({
+                        lat,
+                        lng,
+                        altitude: 2
+                      }));
+              
+                      const polyline3d = new maps3dLib.Polyline3DElement({
+                        altitudeMode: maps3dLib.AltitudeMode.RELATIVE_TO_GROUND,
+                        coordinates,
+                        strokeColor: '#009688', // Accent color
+                        strokeWidth: 6
+                      });
+                      
+                      map.append(polyline3d);
+                      polylineRef.current = polyline3d;
+                }
+
+            } catch (e) {
+                console.error("Failed to compute routes:", e);
+            }
+        }
     }
     
-    processMarkers();
+    processItinerary();
 
     // Cleanup function to remove markers when component unmounts or itinerary changes
     return () => {
         newMarkers.forEach(marker => marker.map = null);
+        if (polylineRef.current) {
+            polylineRef.current.remove();
+        }
     };
 
-  }, [itinerary, markerLib]);
+  }, [itinerary, markerLib, maps3dLib]);
 
   if (!data?.location) {
     return null;
