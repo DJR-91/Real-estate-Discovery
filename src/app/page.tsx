@@ -79,6 +79,8 @@ export interface ItineraryData {
   bannerUrl?: string;
   isBannerLoading: boolean;
   bannerAiHint?: string;
+  weather?: GetWeatherOutput | null;
+  isWeatherLoading: boolean;
 }
 
 export type MapData = {
@@ -165,9 +167,12 @@ export default function Home() {
     setWeatherResponse(null);
     try {
       const weatherResult = await getWeather({ location });
+      setItineraryResponse(prev => prev ? { ...prev, weather: weatherResult, isWeatherLoading: false } : null);
       setWeatherResponse(weatherResult);
     } catch (error) {
       console.error("Failed to fetch weather:", error);
+      // Silently fail or set a default/mock state
+      setItineraryResponse(prev => prev ? { ...prev, isWeatherLoading: false } : null);
     } finally {
       setIsWeatherLoading(false);
     }
@@ -183,14 +188,10 @@ export default function Home() {
     setWeatherResponse(null);
     setMapData(null);
     try {
-      // Fetch videos and weather in parallel
-      const [videoResult] = await Promise.all([
-        searchYoutubeVideos({
+      const videoResult = await searchYoutubeVideos({
           destination: values.destination,
           travelType: values.travelType,
-        }),
-        handleFetchWeather(values.destination),
-      ]);
+        });
       setVideoResponse(videoResult);
     } catch (error) {
       console.error(error);
@@ -238,6 +239,7 @@ export default function Home() {
     setHotelResponse(null);
     setEventsResponse(null);
     setMapData(null);
+    setWeatherResponse(null);
 
     const itineraryInput: GenerateItineraryInput = {
       videoId: video.id,
@@ -263,8 +265,11 @@ export default function Home() {
         videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
         isBannerLoading: true,
+        isWeatherLoading: true,
       });
 
+      // Now fetch weather in the background
+      handleFetchWeather(videoSearchValues.destination);
 
       // Find the first location with a valid address to show on the map.
       let mapLocationFound = false;
@@ -308,11 +313,6 @@ export default function Home() {
         setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: bannerResult.bannerUrl, isBannerLoading: false }) : null);
       } catch (bannerError) {
         console.error("Banner generation failed:", bannerError);
-        toast({
-          variant: "destructive",
-          title: "Banner Generation Failed",
-          description: "Displaying a placeholder image.",
-        });
         // Update the state with a placeholder banner and set loading to false
         setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3', bannerAiHint: 'tokyo tower', isBannerLoading: false }) : null);
       }
@@ -347,6 +347,7 @@ export default function Home() {
         isBannerLoading: false,
         bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3',
         bannerAiHint: 'tokyo tower',
+        isWeatherLoading: false,
       });
       
       toast({
@@ -597,8 +598,6 @@ export default function Home() {
               <>
                 <VideoResultHeader 
                   destination={videoSearchForm.getValues("destination")}
-                  weather={weatherResponse}
-                  isWeatherLoading={isWeatherLoading}
                 />
                 <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
               </>

@@ -1,14 +1,9 @@
 
-import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
-import { WeatherDisplay } from "./weather-display";
-
 interface VideoResultHeaderProps {
   destination: string;
-  weather: GetWeatherOutput | null;
-  isWeatherLoading: boolean;
 }
 
-export function VideoResultHeader({ destination, weather, isWeatherLoading }: VideoResultHeaderProps) {
+export function VideoResultHeader({ destination }: VideoResultHeaderProps) {
   const title = destination === "Places of Interest" 
     ? "Places of Interest"
     : `Video Results for ${destination}`;
@@ -23,7 +18,6 @@ export function VideoResultHeader({ destination, weather, isWeatherLoading }: Vi
         <h2 className="text-2xl font-headline text-primary">{title}</h2>
         <p className="text-sm text-muted-foreground">{subTitle}</p>
       </div>
-      <WeatherDisplay weather={weather} isLoading={isWeatherLoading} />
     </div>
   );
 }

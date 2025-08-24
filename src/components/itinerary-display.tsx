@@ -14,6 +14,7 @@ import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper } f
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
+import { WeatherDisplay } from "./weather-display";
 
 interface ItineraryDisplayProps {
   data: ItineraryData;
@@ -51,7 +52,7 @@ export function ItineraryDisplay({
     onFindEvents, 
     isEventsLoading
 }: ItineraryDisplayProps) {
-  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint } = data;
+  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint, weather, isWeatherLoading } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -72,7 +73,7 @@ export function ItineraryDisplay({
         <CardHeader>
           <div className="flex justify-between items-start gap-4">
             <div>
-              <CardTitle className="font-headline text-3xl text-primary">Your 3-Day Itinerary</CardTitle>
+              <CardTitle className="font-headline text-3xl text-primary">Your 3-Day Itinerary for {destination}</CardTitle>
               <CardDescription>
                 Inspired by the YouTube video:{" "}
                 <a href={video.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-accent">
@@ -80,6 +81,7 @@ export function ItineraryDisplay({
                 </a>
               </CardDescription>
             </div>
+            <WeatherDisplay weather={weather} isLoading={isWeatherLoading} />
           </div>
         </CardHeader>
         <CardContent>
