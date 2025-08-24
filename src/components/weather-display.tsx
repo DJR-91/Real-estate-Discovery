@@ -1,9 +1,10 @@
+
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { Skeleton } from "./ui/skeleton";
 import { WifiOff } from "lucide-react";
 
 interface WeatherDisplayProps {
-    weather: GetWeatherOutput | undefined;
+    weather: GetWeatherOutput | null | undefined;
     isLoading: boolean;
 }
 
@@ -51,7 +52,7 @@ export function WeatherDisplay({ weather, isLoading }: WeatherDisplayProps) {
 
     return (
         <div className="p-3 border rounded-lg shadow-sm bg-background w-48">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center">
                 <div className="flex items-center">
                     <div className="text-4xl">{icon}</div>
                     <div className="ml-2">
@@ -62,14 +63,6 @@ export function WeatherDisplay({ weather, isLoading }: WeatherDisplayProps) {
                             {weather.conditionText}
                         </div>
                     </div>
-                </div>
-            </div>
-            <div className="text-xs text-muted-foreground mt-2 grid grid-cols-2 gap-2">
-                <div className="text-center">
-                    <span className="font-medium">Wind</span> {Math.round(weather.windSpeed)} {weather.windSpeedUnit}
-                </div>
-                <div className="text-center">
-                    <span className="font-medium">Humidity</span> {Math.round(weather.humidity * 100)}%
                 </div>
             </div>
         </div>
