@@ -285,26 +285,28 @@ export default function Home() {
       setIsItineraryLoading(false); 
 
       const mockItinerary = [
-        { day: 1, title: 'Historic Downtown & Culinary Delights', locations: [
-            { name: 'City Central Market', description: 'A bustling market full of local produce and artisanal goods.', address: '100 Market St, Cityville', imageUrl: 'https://placehold.co/600x400.png' },
-            { name: 'Founder\'s Square', description: 'The historic heart of the city, with statues and fountains.', address: '1 Plaza Ave, Cityville', imageUrl: 'https://placehold.co/600x400.png' },
-            { name: 'The Gilded Spoon', description: 'A highly-rated restaurant known for its modern fusion cuisine.', address: '25 Foodie Lane, Cityville', imageUrl: 'https://placehold.co/600x400.png' }
+        { day: 1, title: 'Tsukiji Market & Ginza Sushi', locations: [
+            { name: 'Tsukiji Outer Market', description: 'Explore a bustling market with the freshest seafood and local street food.', address: '4 Chome-16-2 Tsukiji, Chuo City, Tokyo 104-0045, Japan', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Sushi Dai', description: 'Experience one of the most famous sushi breakfasts in the world, right near the market.', address: '6 Chome-5-1 Toyosu, Koto City, Tokyo 135-0061, Japan', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Ginza Kyubey', description: 'Indulge in a high-end, traditional Edomae sushi dinner in the upscale Ginza district.', address: '8 Chome-7-6 Ginza, Chuo City, Tokyo 104-0061, Japan', imageUrl: 'https://placehold.co/600x400.png' }
         ]},
-        { day: 2, title: 'Art, Culture & Riverside Views', locations: [
-            { name: 'Museum of Modern Art', description: 'Home to contemporary masterpieces and rotating exhibits.', address: '200 Grand Ave, Cityville', imageUrl: 'https://placehold.co/600x400.png' },
-            { name: 'Riverside Park & Promenade', description: 'A beautiful park for a relaxing walk along the river.', address: '50 Riverwalk Path, Cityville', imageUrl: 'https://placehold.co/600x400.png' }
+        { day: 2, title: 'Ramen, Depachika & Shinjuku Noodles', locations: [
+            { name: 'Ichiran Ramen', description: 'Enjoy a classic tonkotsu ramen experience in your own private booth.', address: '1 Chome-22-7 Shinjuku, Shinjuku City, Tokyo 160-0022, Japan', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Isetan Depachika', description: 'Discover an underground food paradise with exquisite bentos, sweets, and delicacies.', address: '3 Chome-14-1 Shinjuku, Shinjuku City, Tokyo 160-0022, Japan', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Omoide Yokocho (Piss Alley)', description: 'A nostalgic alleyway packed with tiny yakitori stalls and izakayas, perfect for dinner.', address: '1 Chome-2-8 Nishishinjuku, Shinjuku City, Tokyo 160-0023, Japan', imageUrl: 'https://placehold.co/600x400.png' }
         ]},
-        { day: 3, title: 'Panoramic Vistas & Souvenir Shopping', locations: [
-            { name: 'Sky High Observatory', description: 'Get a 360-degree view of the city from the tallest building.', address: '99 Sky Tower, Cityville', imageUrl: 'https://placehold.co/600x400.png' },
-            { name: 'The Merchant\'s Mile', description: 'A street famous for its unique boutiques and souvenir shops.', address: '75 Shopping Blvd, Cityville', imageUrl: 'https://placehold.co/600x400.png' }
+        { day: 3, title: 'Asakusa Street Food & Tempura', locations: [
+            { name: 'Nakamise-dori Street', description: 'Snack on traditional sweets and savory treats on the path to Senso-ji Temple.', address: '1 Chome Asakusa, Taito City, Tokyo 111-0032, Japan', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Asakusa Kagetsudo', description: 'Try the famous jumbo melon-pan (sweet bread) that has been sold here for decades.', address: '2 Chome-7-13 Asakusa, Taito City, Tokyo 111-0032, Japan', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Daikokuya Tempura', description: 'A historic restaurant serving a unique style of tempura over rice.', address: '1 Chome-38-10 Asakusa, Taito City, Tokyo 111-0032, Japan', imageUrl: 'https://placehold.co/600x400.png' }
         ]}
       ];
       
       setItineraryResponse({
         video: video,
         itinerary: mockItinerary,
-        videoSummary: "This is a sample itinerary. We couldn't generate one from the selected video, but you can explore the app's features with this mock data!",
-        destination: videoSearchValues.destination,
+        videoSummary: "This is a sample itinerary for a foodie tour in Tokyo. We couldn't generate one from the selected video, but you can explore the app's features with this mock data!",
+        destination: "Tokyo",
         isBannerLoading: false,
         bannerUrl: 'https://placehold.co/1200x400.png',
       });
@@ -548,5 +550,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
