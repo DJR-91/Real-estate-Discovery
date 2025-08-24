@@ -33,7 +33,7 @@ const getWeatherFlow = ai.defineFlow(
           throw new Error("Google Maps API key is not configured.");
         }
         
-        const apiUrl = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${apiKey}&location.latitude=${latitude}&location.longitude=${longitude}`;
+        const apiUrl = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${apiKey}&location.latitude=${latitude}&location.longitude=${longitude}&units=METRIC`;
     
         const response = await fetch(apiUrl);
         if (!response.ok) {
