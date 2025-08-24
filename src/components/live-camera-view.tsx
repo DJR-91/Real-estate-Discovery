@@ -88,13 +88,19 @@ export function LiveCameraView() {
  }, [stream, connected]);
 
 
- const toggleConnection = () => {
-   if (connected) {
-     disconnect();
-   } else {
-     connect();
-   }
- };
+  const handleMicPress = () => {
+    if (!connected) {
+      connect();
+    } else {
+        startAudioTurn();
+    }
+  };
+
+  const handleMicRelease = () => {
+    if (connected) {
+        stopAudioTurn();
+    }
+  };
  
   const handleSendText = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,10 +123,10 @@ export function LiveCameraView() {
             <div className="relative group w-24 h-24 flex-shrink-0">
                 <div 
                     className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center cursor-pointer border-2 border-transparent"
-                    onMouseDown={startAudioTurn}
-                    onMouseUp={stopAudioTurn}
-                    onTouchStart={startAudioTurn}
-                    onTouchEnd={stopAudioTurn}
+                    onMouseDown={handleMicPress}
+                    onMouseUp={handleMicRelease}
+                    onTouchStart={handleMicPress}
+                    onTouchEnd={handleMicRelease}
                 >
                     {isListening ? (
                         <Mic className="text-destructive" size={32} />
@@ -136,16 +142,18 @@ export function LiveCameraView() {
                     <Mic className="text-muted-foreground" size={32} />
                     )}
                 </div>
-                <div className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                        size="icon"
-                        variant={connected ? 'destructive' : 'default'}
-                        onClick={toggleConnection}
-                        className="rounded-full"
-                    >
-                        <Video size={20} />
-                    </Button>
-                </div>
+                {connected && (
+                    <div className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                            size="icon"
+                            variant={'destructive'}
+                            onClick={disconnect}
+                            className="rounded-full"
+                        >
+                            <Video size={20} />
+                        </Button>
+                    </div>
+                )}
             </div>
             <div className="w-40 flex-shrink-0">
                 {showVisualizer && <VoiceVisualizer stream={stream} />}
