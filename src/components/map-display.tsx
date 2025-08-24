@@ -8,6 +8,8 @@ import { useMapsLibrary } from '@vis.gl/react-google-maps';
 import { useMap3DCameraEvents, Map3DCameraProps } from '@/hooks/use-map-3d-camera-events';
 import { useCallbackRef, useDeepCompareEffect } from '@/hooks/utility-hooks';
 import '@/hooks/map-3d-types';
+import type { ItineraryDaySchema } from '@/ai/schemas/itinerary-schema';
+import type { GenerateItineraryOutput } from '@/ai/schemas/itinerary-schema';
 
 // The new reusable Map3D component logic, adapted from your provided code
 export type Map3DProps = google.maps.maps3d.Map3DElementOptions & {
@@ -68,8 +70,10 @@ Map3D.displayName = "Map3D";
 
 
 // The main MapDisplay component that uses the new Map3D component
-export default function MapDisplay({ data }: { data: MapData }) {
+export default function MapDisplay({ data, itinerary }: { data: MapData, itinerary: GenerateItineraryOutput['itinerary'] | null | undefined }) {
   const mapRef = useRef<google.maps.maps3d.Map3DElement>(null);
+  const markerLib = useMapsLibrary('marker');
+  const [markers, setMarkers] = useState<google.maps.marker.AdvancedMarkerElement[]>([]);
 
   useEffect(() => {
     if (!mapRef.current || !data?.location) return;
@@ -105,6 +109,63 @@ export default function MapDisplay({ data }: { data: MapData }) {
     };
 
   }, [data]);
+  
+  const geocodeAddress = (address: string): Promise<google.maps.LatLngLiteral | null> => {
+    return new Promise((resolve) => {
+        if (!window.google || !window.google.maps) {
+            resolve(null);
+            return;
+        }
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address }, (results, status) => {
+            if (status === "OK" && results && results[0]) {
+                const location = results[0].geometry.location;
+                resolve({ lat: location.lat(), lng: location.lng() });
+            } else {
+                console.warn(`Geocoding failed for ${address}: ${status}`);
+                resolve(null);
+            }
+        });
+    });
+  };
+
+  useEffect(() => {
+    if (!mapRef.current || !markerLib || !itinerary) {
+      return;
+    }
+    const map = mapRef.current;
+
+    // Clear existing markers
+    markers.forEach(marker => marker.map = null);
+    const newMarkers: google.maps.marker.AdvancedMarkerElement[] = [];
+
+    const processMarkers = async () => {
+        for (const day of itinerary) {
+            for (const location of day.locations) {
+              if (location.address && location.address !== "Address not available") {
+                const position = await geocodeAddress(location.address);
+                if (position) {
+                    const marker = new markerLib.AdvancedMarkerElement({
+                        map: map as unknown as google.maps.Map, // Cast since Map3D is not directly a Map
+                        position: position,
+                        title: location.name,
+                    });
+                    newMarkers.push(marker);
+                }
+              }
+            }
+        }
+        setMarkers(newMarkers);
+    }
+    
+    processMarkers();
+
+    // Cleanup function to remove markers when component unmounts or itinerary changes
+    return () => {
+        newMarkers.forEach(marker => marker.map = null);
+    };
+
+  }, [itinerary, markerLib]);
 
   if (!data?.location) {
     return null;

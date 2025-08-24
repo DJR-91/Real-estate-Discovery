@@ -618,7 +618,7 @@ export default function Home() {
           
           {mapData && !isItineraryLoading && (
             <div className="pt-8">
-              <MapDisplay data={mapData} />
+              <MapDisplay data={mapData} itinerary={itineraryResponse?.itinerary} />
             </div>
           )}
 
