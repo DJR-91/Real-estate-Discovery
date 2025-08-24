@@ -4,6 +4,68 @@
 import React, { useEffect, useRef } from 'react';
 import type { MapData } from '@/app/page';
 import { PlaceCard } from './place-card';
+import { DOMAttributes, RefAttributes } from 'react';
+
+// add an overload signature for the useMapsLibrary hook, so typescript
+// knows what the 'maps3d' library is.
+declare module '@vis.gl/react-google-maps' {
+  export function useMapsLibrary(
+    name: 'maps3d'
+  ): typeof google.maps.maps3d | null;
+}
+
+// temporary fix until @types/google.maps is updated with the latest changes
+declare global {
+  namespace google.maps.maps3d {
+    interface CameraOptions {
+      center?: google.maps.LatLngAltitude | google.maps.LatLngAltitudeLiteral;
+      heading?: number;
+      range?: number;
+      roll?: number;
+      tilt?: number;
+    }
+
+    interface FlyAroundAnimationOptions {
+      camera: CameraOptions;
+      durationMillis?: number;
+      rounds?: number;
+    }
+
+    interface FlyToAnimationOptions {
+      endCamera: CameraOptions;
+      durationMillis?: number;
+    }
+    interface Map3DElement extends HTMLElement {
+      mode?: 'HYBRID' | 'SATELLITE';
+      flyCameraAround: (options: FlyAroundAnimationOptions) => void;
+      flyCameraTo: (options: FlyToAnimationOptions) => void;
+    }
+  }
+}
+
+// add the <gmp-map-3d> custom-element to the JSX.IntrinsicElements
+// interface, so it can be used in jsx
+declare module 'react' {
+  namespace JSX {
+    interface IntrinsicElements {
+      ['gmp-map-3d']: CustomElement<
+        google.maps.maps3d.Map3DElement,
+        google.maps.maps3d.Map3DElement
+      >;
+    }
+  }
+}
+
+// a helper type for CustomElement definitions
+type CustomElement<TElem, TAttr> = Partial<
+  TAttr &
+    DOMAttributes<TElem> &
+    RefAttributes<TElem> & {
+      // for whatever reason, anything else doesn't work as children
+      // of a custom element, so we allow `any` here
+      children: any;
+    }
+>;
 
 // Define a more specific TypeScript type for the 3D Map HTML Element
 interface Map3DElement extends HTMLElement {
@@ -16,15 +78,6 @@ interface Map3DElement extends HTMLElement {
   flyCameraAround: (options: { camera: { center: { lat: number; lng: number; altitude: number; }; tilt: number; range: number; heading: number; }; durationMillis: number; rounds: number; }) => void;
 }
 
-// Update the global JSX namespace to make TypeScript recognize the custom element
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'gmp-map-3d': React.DetailedHTMLProps<React.HTMLAttributes<Map3DElement>, Map3DElement>;
-    }
-  }
-}
-
 export default function MapDisplay({ data }: { data: MapData }) {
   const mapRef = useRef<Map3DElement>(null);
 
@@ -34,28 +87,41 @@ export default function MapDisplay({ data }: { data: MapData }) {
 
     const map = mapRef.current;
     const { lat, lng } = data.location;
-
-    // Set the map's initial properties directly
-    map.center = { lat, lng, altitude: 0 };
-    map.range = 1000; // Sets the camera's distance from the center in meters
-    map.tilt = 75;    // Sets the camera's viewing angle
-    map.heading = 330;  // Sets the camera's compass direction
-    map.defaultUIDisabled = true; // Hides the default map controls
+    
+    // Define the camera position and animation details
+    const flyToCamera = {
+        center: { lat, lng, altitude: 80 },
+        range: 1500,
+        tilt: 77,
+        heading: -45,
+    };
+  
+    // Animate the camera to the new location
+    map.flyCameraTo({
+        endCamera: flyToCamera,
+        durationMillis: 3000,
+    });
+    
+    // After the initial flight, start circling the location
+    const handleAnimationEnd = () => {
+        map.flyCameraAround({
+            camera: flyToCamera,
+            durationMillis: 25000,
+            rounds: 1,
+        });
+    };
+    
+    map.addEventListener('gmp-animationend', handleAnimationEnd, { once: true });
+    
+    // Set other map properties
+    map.defaultUIDisabled = true;
     map.mode = "SATELLITE";
 
+    // Cleanup: remove the event listener when the component unmounts or data changes
+    return () => {
+      // It's good practice to remove event listeners, though 'once: true' handles this for us.
+    };
 
-    map.flyCameraAround({
-      camera: {
-          center: { lat, lng, altitude: 0 },
-          tilt: 75,
-          range: 1000,
-          heading: 330,
-      },
-      durationMillis: 250000,
-      rounds: 5
-  });
-
-  
   }, [data]); // Rerun this effect if the `data` prop changes
 
   if (!data?.location) {
