@@ -65,7 +65,7 @@ const getWeatherFlow = ai.defineFlow(
         console.warn("Weather flow failed, returning mock data.", error);
         // As a fallback for any error (API failure, unsupported location, etc.), return mock data for Tokyo.
         return {
-            temperature: 18,
+            temperature: 21,
             temperatureUnit: 'C',
             conditionText: 'Partly Cloudy',
             latitude: 35.6895,
