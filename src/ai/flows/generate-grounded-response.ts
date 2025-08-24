@@ -21,14 +21,8 @@ const generateGroundedResponseFlow = ai.defineFlow(
     outputSchema: GenerateGroundedResponseOutputSchema,
   },
   async (input) => {
-    const grounding_tool = {
-        google_search: {
-          type: 'PLACES_AND_GEOSPATIAL_SEARCH'
-        }
-    };
-
     const config = {
-        tools: [grounding_tool]
+      tools: [{ google_search: {} }],
     };
 
     const response = await ai.generate({
