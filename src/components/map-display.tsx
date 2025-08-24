@@ -12,9 +12,7 @@ import type { ItineraryDaySchema } from '@/ai/schemas/itinerary-schema';
 import type { GenerateItineraryOutput } from '@/ai/schemas/itinerary-schema';
 
 // The new reusable Map3D component logic, adapted from your provided code
-export type Map3DProps = google.maps.maps3d.Map3DElementOptions & {
-  onCameraChange?: (cameraProps: Map3DCameraProps) => void;
-};
+export type { Map3DCameraProps };
 
 const Map3D = forwardRef(
   (
@@ -81,6 +79,7 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
     const map = mapRef.current;
     const { lat, lng } = data.location;
     
+    // Used for both the fly to function and the location to fly around.
     const flyToCamera = {
         center: { lat, lng, altitude: 80 },
         range: 1500,
@@ -88,23 +87,26 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
         heading: -45,
     };
   
+    // Fly the camera from its current position to the new location.
     map.flyCameraTo({
         endCamera: flyToCamera,
-        durationMillis: 3000,
+        durationMillis: 3000, // Flight duration in milliseconds
     });
     
+    // When the flight animation has completed, start orbiting the location.
     const handleAnimationEnd = () => {
         map.flyCameraAround({
-            camera: flyToCamera,
-            durationMillis: 25000,
-            rounds: 1,
+            camera: flyToCamera, // Location to fly around
+            durationMillis: 25000, // Time for one full orbit
+            rounds: 1, // Number of rotations
         });
     };
     
+    // Add a one-time event listener for the animation end.
     map.addEventListener('gmp-animationend', handleAnimationEnd, { once: true });
     
+    // Cleanup function to remove the listener if the component unmounts or data changes mid-animation.
     return () => {
-      // Clean up listener if the component unmounts during animation
       map.removeEventListener('gmp-animationend', handleAnimationEnd);
     };
 
