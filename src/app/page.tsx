@@ -53,6 +53,7 @@ import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { VideoResultHeader } from "@/components/video-result-header";
 import { EventsDisplay } from "@/components/events-display";
+import { WeatherDisplay } from "@/components/weather-display";
 
 
 const groundedSearchSchema = z.object({
@@ -166,15 +167,6 @@ export default function Home() {
     try {
       const weatherResult = await getWeather({ location });
       setWeatherResponse(weatherResult);
-
-      if (weatherResult && weatherResult.conditionText === 'Partly Cloudy' && weatherResult.temperature === 18) {
-        toast({
-            variant: "default",
-            title: "Using Mock Weather Data",
-            description: "Could not fetch live weather; displaying sample data for Tokyo.",
-        });
-      }
-
     } catch (error) {
       console.error("Failed to fetch weather:", error);
       // Errors are now handled by the flow's fallback, but we keep this for unexpected client-side issues.
@@ -585,9 +577,12 @@ export default function Home() {
           ) : activeTab === "search" ? (
             groundedResponse ? (
               <>
-                <VideoResultHeader
-                  destination={"Places of Interest"}
-                />
+                <div className="flex justify-between items-start mb-4">
+                    <VideoResultHeader
+                      destination={"Places of Interest"}
+                    />
+                    <WeatherDisplay weather={weatherResponse} isLoading={isWeatherLoading} />
+                </div>
                 <ResultsDisplay data={groundedResponse} />
               </>
             ) : (
