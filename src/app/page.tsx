@@ -54,7 +54,6 @@ import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { VideoResultHeader } from "@/components/video-result-header";
 import { EventsDisplay } from "@/components/events-display";
-import { LiveCameraView } from "@/components/live-camera-view";
 
 
 const groundedSearchSchema = z.object({
@@ -443,7 +442,6 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12 lg:p-24 bg-background">
-      <LiveCameraView />
       <div className="w-full max-w-6xl space-y-8">
         <header className="text-center">
           <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">

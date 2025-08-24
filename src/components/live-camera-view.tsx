@@ -1,11 +1,12 @@
 
+
 'use client';
 
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
 import { cn } from '@/lib/utils';
-import { Mic, Send, Video } from 'lucide-react';
+import { Mic, Send, Video, MessageSquare } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
@@ -78,6 +79,7 @@ export function LiveCameraView() {
  const { connected, stream, connect, disconnect, send, text: responseText, startAudioTurn, stopAudioTurn, isListening } = useLiveAPIContext();
  const videoRef = useRef<HTMLVideoElement>(null);
  const [inputText, setInputText] = useState('');
+ const [isTextEntryVisible, setIsTextEntryVisible] = useState(false);
  
  useEffect(() => {
    if (stream && videoRef.current) {
@@ -107,7 +109,7 @@ export function LiveCameraView() {
 
 
  return (
-    <div className="fixed bottom-6 left-6 z-50 flex items-end gap-4">
+    <div className="absolute bottom-6 left-6 z-50 flex items-end gap-4">
         <div className={cn(
         "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300",
         showVisualizer ? "w-64" : "w-24"
@@ -151,24 +153,37 @@ export function LiveCameraView() {
         </div>
         {connected && (
             <div className="flex flex-col gap-2 w-96">
-                {responseText && (
-                    <Card className="bg-muted/80 backdrop-blur-sm border-primary/20 p-4 animate-in fade-in duration-300">
-                        <CardContent className="p-0">
-                            <p className="text-sm">{responseText}</p>
-                        </CardContent>
-                    </Card>
+                <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setIsTextEntryVisible(!isTextEntryVisible)}
+                    className="bg-muted/80 backdrop-blur-sm border-primary/20 hover:bg-muted"
+                >
+                    <MessageSquare className="mr-2" />
+                    {isTextEntryVisible ? 'Hide Text Input' : 'Show Text Input'}
+                </Button>
+                {isTextEntryVisible && (
+                    <div className="animate-in fade-in duration-300 space-y-2">
+                        {responseText && (
+                            <Card className="bg-muted/80 backdrop-blur-sm border-primary/20 p-4">
+                                <CardContent className="p-0">
+                                    <p className="text-sm">{responseText}</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                        <form onSubmit={handleSendText} className="flex gap-2">
+                            <Input 
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                                placeholder="Type a message..."
+                                className="bg-muted/80 backdrop-blur-sm border-primary/20"
+                            />
+                            <Button type="submit" size="icon" disabled={!inputText.trim()}>
+                                <Send />
+                            </Button>
+                        </form>
+                    </div>
                 )}
-                <form onSubmit={handleSendText} className="flex gap-2">
-                    <Input 
-                        value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        placeholder="Type a message..."
-                        className="bg-muted/80 backdrop-blur-sm border-primary/20"
-                    />
-                    <Button type="submit" size="icon" disabled={!inputText.trim()}>
-                        <Send />
-                    </Button>
-                </form>
             </div>
         )}
    </div>

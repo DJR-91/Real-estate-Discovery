@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, ForwardedRef } from 'react';
@@ -10,6 +11,7 @@ import { useCallbackRef, useDeepCompareEffect } from '@/hooks/utility-hooks';
 import '@/hooks/map-3d-types';
 import type { GenerateItineraryOutput } from '@/ai/schemas/itinerary-schema';
 import { RoutesApi } from '@/services/routes-api';
+import { LiveCameraView } from './live-camera-view';
 
 // The new reusable Map3D component logic, adapted from your provided code
 export type { Map3DCameraProps };
@@ -243,7 +245,7 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-lg">
+    <div className="bg-card rounded-lg shadow-lg relative">
       <div className="p-6">
         <h2 className="text-3xl font-bold font-headline text-primary">
           Photorealistic 3D Map
@@ -253,13 +255,14 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
         </p>
       </div>
       <div className="p-6 pt-0 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 relative">
             <Map3D
               ref={mapRef}
               map-id="21b670ae378cc0c7ef920de7"
               style={{ height: '500px', width: '100%', borderRadius: '0.5rem' }}
               defaultUIDisabled={true}
             />
+            <LiveCameraView />
         </div>
         <div className="md:col-span-1">
             {data.place && <PlaceCard place={data.place} />}
