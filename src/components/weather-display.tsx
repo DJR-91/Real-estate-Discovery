@@ -66,14 +66,6 @@ export function WeatherDisplay({ weather, isLoading }: WeatherDisplayProps) {
                     </div>
                 </div>
             </div>
-            {weather.latitude && weather.longitude && (
-                <>
-                    <Separator className="my-2" />
-                    <div className="text-center text-xs text-muted-foreground">
-                        {`Lat: ${weather.latitude.toFixed(4)}, Lon: ${weather.longitude.toFixed(4)}`}
-                    </div>
-                </>
-            )}
         </div>
     );
 }
