@@ -53,7 +53,6 @@ import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { VideoResultHeader } from "@/components/video-result-header";
 import { EventsDisplay } from "@/components/events-display";
-import { WeatherDisplay } from "@/components/weather-display";
 
 
 const groundedSearchSchema = z.object({
@@ -221,6 +220,36 @@ export default function Home() {
         });
     });
   };
+  
+  const handleMapLocationSelect = async (place: PointOfInterest) => {
+    if (!place.address || place.address === "Address not available") {
+        toast({
+            variant: "destructive",
+            title: "Location Not Available",
+            description: "This location does not have a valid address to display on the map.",
+        });
+        return;
+    }
+    try {
+        const coords = await geocodeAddress(place.address);
+        setMapData({
+            location: {
+                name: place.name,
+                lat: coords.lat,
+                lng: coords.lng,
+            },
+            place: place,
+        });
+    } catch (e) {
+        console.error(`Could not geocode address for ${place.name}: ${place.address}`, e);
+        toast({
+            variant: "destructive",
+            title: "Could Not Find Location",
+            description: `We couldn't find the coordinates for ${place.name} on the map.`,
+        });
+    }
+  }
+
 
   const handleGenerateItinerary = async (video: Video) => {
     const videoSearchValues = videoSearchForm.getValues();
@@ -254,10 +283,8 @@ export default function Home() {
     }
 
     try {
-      // Fetch itinerary
       const itineraryResult = await generateItinerary(itineraryInput);
       
-      // Show itinerary immediately, with a loading state for other elements
       setItineraryResponse({
         video: video,
         itinerary: itineraryResult.itinerary,
@@ -267,7 +294,6 @@ export default function Home() {
         isWeatherLoading: true,
       });
 
-      // Now fetch weather in the background
       handleFetchWeather(videoSearchValues.destination);
 
       // Find the first location with a valid address to show on the map.
@@ -276,22 +302,9 @@ export default function Home() {
         if (mapLocationFound) break;
         for (const location of day.locations) {
           if (location.address && location.address !== "Address not available") {
-            try {
-              const coords = await geocodeAddress(location.address);
-              setMapData({
-                location: {
-                  name: location.name,
-                  lat: coords.lat,
-                  lng: coords.lng,
-                },
-                place: location,
-              });
-              mapLocationFound = true;
-              break; 
-            } catch (e) {
-              console.warn(`Could not geocode address for ${location.name}: ${location.address}`, e);
-              // Continue to the next location
-            }
+            handleMapLocationSelect(location);
+            mapLocationFound = true;
+            break;
           }
         }
       }
@@ -306,14 +319,11 @@ export default function Home() {
       
       setIsItineraryLoading(false);
 
-      // Now, generate the banner in the background
       try {
         const bannerResult = await generateItineraryBanner(bannerInput);
-        // Update the state with the banner URL when it's ready
         setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: bannerResult.bannerUrl, isBannerLoading: false }) : null);
       } catch (bannerError) {
         console.error("Banner generation failed:", bannerError);
-        // Update the state with a placeholder banner and set loading to false
         setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3', bannerAiHint: 'tokyo tower', isBannerLoading: false }) : null);
       }
 
@@ -588,6 +598,7 @@ export default function Home() {
                 isHotelLoading={isHotelLoading}
                 onFindEvents={handleFindEvents}
                 isEventsLoading={isEventsLoading}
+                onSelectLocation={handleMapLocationSelect}
               />
             ) : videoResponse ? (
               <>

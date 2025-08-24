@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper } from "lucide-react";
+import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper, Eye } from "lucide-react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { WeatherDisplay } from "./weather-display";
+import type { PointOfInterest } from "@/ai/schemas/grounded-response-schema";
 
 interface ItineraryDisplayProps {
   data: ItineraryData;
@@ -22,6 +23,7 @@ interface ItineraryDisplayProps {
   isHotelLoading: boolean;
   onFindEvents: (destination: string, videoSummary: string) => void;
   isEventsLoading: boolean;
+  onSelectLocation: (place: PointOfInterest) => void;
 }
 
 const locationIcons: { [key: string]: React.ReactNode } = {
@@ -50,7 +52,8 @@ export function ItineraryDisplay({
     onFindHotels, 
     isHotelLoading, 
     onFindEvents, 
-    isEventsLoading
+    isEventsLoading,
+    onSelectLocation,
 }: ItineraryDisplayProps) {
   const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint, weather, isWeatherLoading } = data;
 
@@ -115,7 +118,15 @@ export function ItineraryDisplay({
                           {getIconForLocation(location.name)}
                         </div>
                         <div className="w-full">
-                          <p className="font-bold text-lg">{location.name}</p>
+                          <div className="flex justify-between items-center">
+                            <p className="font-bold text-lg">{location.name}</p>
+                            {location.address && location.address !== "Address not available" && (
+                                <Button variant="ghost" size="sm" onClick={() => onSelectLocation(location)}>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View on Map
+                                </Button>
+                            )}
+                          </div>
                           <p className="text-muted-foreground">{location.description}</p>
                           {location.address && (
                              <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
