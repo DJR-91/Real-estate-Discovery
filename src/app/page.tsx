@@ -275,10 +275,20 @@ export default function Home() {
       setIsItineraryLoading(false);
 
       // Now, generate the banner in the background
-      const bannerResult = await generateItineraryBanner(bannerInput);
-      
-      // Update the state with the banner URL when it's ready
-      setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: bannerResult.bannerUrl, isBannerLoading: false }) : null);
+      try {
+        const bannerResult = await generateItineraryBanner(bannerInput);
+        // Update the state with the banner URL when it's ready
+        setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: bannerResult.bannerUrl, isBannerLoading: false }) : null);
+      } catch (bannerError) {
+        console.error("Banner generation failed:", bannerError);
+        toast({
+          variant: "destructive",
+          title: "Banner Generation Failed",
+          description: "Displaying a placeholder image.",
+        });
+        // Update the state with a placeholder banner and set loading to false
+        setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: 'https://placehold.co/1200x400.png', isBannerLoading: false }) : null);
+      }
 
     } catch (error) {
       console.error(error);
