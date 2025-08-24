@@ -18,9 +18,14 @@ const getWeatherFlow = ai.defineFlow(
     outputSchema: GetWeatherOutputSchema.nullable(),
   },
   async (input) => {
+    let latitude: number;
+    let longitude: number;
+
     try {
         // Step 1: Geocode the location name to get latitude and longitude.
-        const { latitude, longitude } = await geocodeTool({ address: input.location });
+        const geocoded = await geocodeTool({ address: input.location });
+        latitude = geocoded.latitude;
+        longitude = geocoded.longitude;
     
         // Step 2: Call the Google Weather API.
         const apiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -53,9 +58,8 @@ const getWeatherFlow = ai.defineFlow(
             temperature: conditions.temperature?.value || 0,
             temperatureUnit: conditions.temperature?.units || 'C',
             conditionText: conditions.weather || 'Unknown',
-            windSpeed: conditions.wind?.speed?.value || 0,
-            windSpeedUnit: conditions.wind?.speed?.units || 'km/h',
-            humidity: conditions.humidity?.value || 0,
+            latitude,
+            longitude,
         };
     } catch (error) {
         console.warn("Weather flow failed, returning mock data.", error);
@@ -64,9 +68,8 @@ const getWeatherFlow = ai.defineFlow(
             temperature: 18,
             temperatureUnit: 'C',
             conditionText: 'Partly Cloudy',
-            windSpeed: 10,
-            windSpeedUnit: 'km/h',
-            humidity: 0.6,
+            latitude: 35.6895,
+            longitude: 139.6917,
         };
     }
   }

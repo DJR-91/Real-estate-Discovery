@@ -2,6 +2,7 @@
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { Skeleton } from "./ui/skeleton";
 import { WifiOff } from "lucide-react";
+import { Separator } from "./ui/separator";
 
 interface WeatherDisplayProps {
     weather: GetWeatherOutput | null | undefined;
@@ -36,12 +37,12 @@ function getWeatherIcon(conditionText: string): string {
 
 export function WeatherDisplay({ weather, isLoading }: WeatherDisplayProps) {
     if (isLoading) {
-        return <Skeleton className="w-48 h-24 rounded-lg" />;
+        return <Skeleton className="w-48 h-28 rounded-lg" />;
     }
     
     if (!weather) {
         return (
-            <div className="flex flex-col items-center justify-center text-muted-foreground p-4 border rounded-lg w-48 h-24">
+            <div className="flex flex-col items-center justify-center text-muted-foreground p-4 border rounded-lg w-48 h-28">
                 <WifiOff className="h-6 w-6 mb-1" />
                 <p className="text-xs text-center">Weather data unavailable</p>
             </div>
@@ -65,6 +66,14 @@ export function WeatherDisplay({ weather, isLoading }: WeatherDisplayProps) {
                     </div>
                 </div>
             </div>
+            {weather.latitude && weather.longitude && (
+                <>
+                    <Separator className="my-2" />
+                    <div className="text-center text-xs text-muted-foreground">
+                        {`Lat: ${weather.latitude.toFixed(4)}, Lon: ${weather.longitude.toFixed(4)}`}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
