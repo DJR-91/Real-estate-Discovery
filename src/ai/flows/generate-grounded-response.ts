@@ -8,6 +8,7 @@
 
 import {ai} from '@/ai/genkit';
 import { GenerateGroundedResponseInputSchema, GenerateGroundedResponseOutputSchema, type GenerateGroundedResponseInput, type GenerateGroundedResponseOutput } from '@/ai/schemas/grounded-response-schema';
+import { googleAI } from '@genkit-ai/googleai';
 
 export async function generateGroundedResponse(input: GenerateGroundedResponseInput): Promise<GenerateGroundedResponseOutput> {
   return generateGroundedResponseFlow(input);
@@ -21,7 +22,9 @@ const generateGroundedResponseFlow = ai.defineFlow(
   },
   async (input) => {
     const grounding_tool = {
-        google_search: {}
+        google_search: {
+          type: 'PLACES_AND_GEOSPATIAL_SEARCH'
+        }
     };
 
     const config = {
