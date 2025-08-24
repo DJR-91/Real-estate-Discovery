@@ -406,11 +406,6 @@ export default function Home() {
         ]
       };
       setEventsResponse(mockEvents);
-      toast({
-        variant: "destructive",
-        title: "Event Search Failed",
-        description: "We couldn't find trendy events, so here's a sample list of food events in Tokyo.",
-      });
     } finally {
       setIsEventsLoading(false);
     }
