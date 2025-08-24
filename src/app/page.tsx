@@ -52,6 +52,7 @@ import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
 import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { VideoResultHeader } from "@/components/video-result-header";
+import { EventsDisplay } from "@/components/events-display";
 
 
 const groundedSearchSchema = z.object({
@@ -144,6 +145,8 @@ export default function Home() {
     setWeatherResponse(null);
     setMapData(null);
     try {
+      // For testing, hardcode the weather location to Tokyo.
+      handleFetchWeather("Tokyo");
       const result = await generateGroundedResponse({ query: values.query });
       setGroundedResponse(result);
     } catch (error) {
@@ -181,14 +184,10 @@ export default function Home() {
     setWeatherResponse(null);
     setMapData(null);
     try {
-      // Fetch videos and weather in parallel
-      const [videoResult] = await Promise.all([
-        searchYoutubeVideos({
-          destination: values.destination,
-          travelType: values.travelType,
-        }),
-        handleFetchWeather(values.destination),
-      ]);
+      const videoResult = await searchYoutubeVideos({
+        destination: values.destination,
+        travelType: values.travelType,
+      });
       setVideoResponse(videoResult);
     } catch (error) {
       console.error(error);
@@ -567,7 +566,14 @@ export default function Home() {
             <LoadingState />
           ) : activeTab === "search" ? (
             groundedResponse ? (
-              <ResultsDisplay data={groundedResponse} />
+              <>
+                <VideoResultHeader
+                  destination={"Tokyo"}
+                  weather={weatherResponse}
+                  isLoading={isWeatherLoading}
+                />
+                <ResultsDisplay data={groundedResponse} />
+              </>
             ) : (
               <Card className="text-center p-12 border-dashed flex items-center justify-center h-full max-w-4xl mx-auto">
                 <h2 className="text-xl font-medium text-muted-foreground">
@@ -588,8 +594,8 @@ export default function Home() {
               <>
                 <VideoResultHeader 
                   destination={videoSearchForm.getValues("destination")} 
-                  weather={weatherResponse}
-                  isLoading={isWeatherLoading}
+                  weather={null}
+                  isLoading={false}
                 />
                 <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
               </>
@@ -617,3 +623,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
