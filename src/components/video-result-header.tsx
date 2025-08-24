@@ -4,11 +4,9 @@ import { WeatherDisplay } from "./weather-display";
 
 interface VideoResultHeaderProps {
   destination: string;
-  weather: GetWeatherOutput | null;
-  isLoading: boolean;
 }
 
-export function VideoResultHeader({ destination, weather, isLoading }: VideoResultHeaderProps) {
+export function VideoResultHeader({ destination }: VideoResultHeaderProps) {
   const title = destination === "Places of Interest" 
     ? "Places of Interest"
     : `Video Results for ${destination}`;
@@ -23,7 +21,6 @@ export function VideoResultHeader({ destination, weather, isLoading }: VideoResu
         <h2 className="text-2xl font-headline text-primary">{title}</h2>
         <p className="text-sm text-muted-foreground">{subTitle}</p>
       </div>
-      <WeatherDisplay weather={weather} isLoading={isLoading} />
     </div>
   );
 }
