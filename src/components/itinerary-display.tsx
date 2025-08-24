@@ -53,7 +53,7 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEve
       <Card className="shadow-lg overflow-hidden">
         <div className="relative w-full h-[300px] bg-muted">
           {isBannerLoading && <Skeleton className="w-full h-full" />}
-          {bannerUrl && (
+          {bannerUrl && !isBannerLoading && (
             <Image
               src={bannerUrl}
               alt="AI-generated itinerary banner"

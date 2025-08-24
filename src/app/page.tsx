@@ -77,7 +77,7 @@ export interface ItineraryData {
   bannerUrl?: string;
   isBannerLoading: boolean;
   bannerAiHint?: string;
-  weather?: GetWeatherOutput;
+  weather?: GetWeatherOutput | null;
   isWeatherLoading: boolean;
 }
 
@@ -208,11 +208,7 @@ export default function Home() {
       setItineraryResponse(prev => prev ? ({ ...prev, weather: weatherResult, isWeatherLoading: false }) : null);
     } catch (error) {
       console.error("Failed to fetch weather:", error);
-      toast({
-        variant: "destructive",
-        title: "Weather Not Available",
-        description: "Could not retrieve weather data for the destination.",
-      });
+      // Don't show a toast for weather errors, as the UI handles the "unavailable" state.
       setItineraryResponse(prev => prev ? ({ ...prev, isWeatherLoading: false }) : null);
     }
   }
