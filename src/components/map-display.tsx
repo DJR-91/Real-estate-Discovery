@@ -145,7 +145,7 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
     if (!mapRef.current || !markerLib || !maps3dLib || !itinerary) {
       return;
     }
-    const map = mapRef.current;
+    const map = mapRef.current as unknown as google.maps.Map;
 
     // Clear existing elements
     markers.forEach(marker => marker.map = null);
@@ -180,7 +180,7 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
                 markerElement.textContent = icon;
                 
                 const marker = new markerLib.AdvancedMarkerElement({
-                    map: map as unknown as google.maps.Map, // Cast since Map3D is not directly a Map
+                    map: map,
                     position: position,
                     title: location.name,
                     content: markerElement,
@@ -202,7 +202,7 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
                 const [route] = res.routes;
                 const { geoJsonLinestring } = route.polyline ?? {};
                 
-                if(geoJsonLinestring) {
+                if(geoJsonLinestring && mapRef.current) {
                     const coordinates = geoJsonLinestring.coordinates.map(([lng, lat]) => ({
                         lat,
                         lng,
@@ -216,7 +216,7 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
                         strokeWidth: 6
                       });
                       
-                      map.append(polyline3d);
+                      mapRef.current.append(polyline3d);
                       polylineRef.current = polyline3d;
                 }
 
