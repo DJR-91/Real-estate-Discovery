@@ -27,7 +27,7 @@ const findTrendyEventsFlow = ai.defineFlow(
     // Step 1: If a video summary is provided, use an LLM to extract a simple theme.
     if (input.videoSummary && input.videoSummary.trim() !== '') {
         const themeResponse = await ai.generate({
-            model: 'googleai/gemini-2.5-flash-lite',
+            model: 'googleai/gemini-2.5-flash',
             prompt: `Based on the following summary of a travel video, what is a one or two-word theme for the trip (e.g., "Foodie trip", "Historic Adventure", "Mountain Trek")?
       
             Summary: "${input.videoSummary}"
@@ -65,7 +65,7 @@ const findTrendyEventsFlow = ai.defineFlow(
 
     // Step 4: Use another LLM call to reliably parse the unstructured text into the required structured JSON format.
     const parsingResponse = await ai.generate({
-        model: 'googleai/gemini-2.5-flash-lite',
+        model: 'googleai/gemini-2.5-flash',
         prompt: `Please parse the following text, which contains a list of events, and format it as a JSON object that conforms to the specified schema.
         
         Text to parse:

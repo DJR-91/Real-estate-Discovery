@@ -239,27 +239,39 @@ export default function Home() {
         isBannerLoading: true,
       });
 
-      // Show map for the first location
-      const firstLocation = itineraryResult.itinerary[0]?.locations[0];
-      if (firstLocation?.address) {
-        try {
-            const coords = await geocodeAddress(firstLocation.address);
-            setMapData({
+      // Find the first location with a valid address to show on the map.
+      let mapLocationFound = false;
+      for (const day of itineraryResult.itinerary) {
+        if (mapLocationFound) break;
+        for (const location of day.locations) {
+          if (location.address && location.address !== "Address not available") {
+            try {
+              const coords = await geocodeAddress(location.address);
+              setMapData({
                 location: {
-                    name: firstLocation.name,
-                    lat: coords.lat,
-                    lng: coords.lng,
+                  name: location.name,
+                  lat: coords.lat,
+                  lng: coords.lng,
                 }
-            });
-        } catch (e) {
-            console.error("Client-side geocoding failed", e);
-            toast({
-              variant: "destructive",
-              title: "Map Error",
-              description: "Could not find coordinates for the first location.",
-            });
+              });
+              mapLocationFound = true;
+              break; 
+            } catch (e) {
+              console.warn(`Could not geocode address for ${location.name}: ${location.address}`, e);
+              // Continue to the next location
+            }
+          }
         }
       }
+
+      if (!mapLocationFound) {
+        toast({
+            variant: "default",
+            title: "Map Information",
+            description: "Could not find coordinates for any of the itinerary locations to display on the map.",
+          });
+      }
+      
       setIsItineraryLoading(false);
 
       // Now, generate the banner in the background
