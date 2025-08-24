@@ -282,12 +282,37 @@ export default function Home() {
 
     } catch (error) {
       console.error(error);
-      setIsItineraryLoading(false); // Make sure loading stops on error
-      setItineraryResponse(null); // Clear any partial state
+      setIsItineraryLoading(false); 
+
+      const mockItinerary = [
+        { day: 1, title: 'Historic Downtown & Culinary Delights', locations: [
+            { name: 'City Central Market', description: 'A bustling market full of local produce and artisanal goods.', address: '100 Market St, Cityville', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Founder\'s Square', description: 'The historic heart of the city, with statues and fountains.', address: '1 Plaza Ave, Cityville', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'The Gilded Spoon', description: 'A highly-rated restaurant known for its modern fusion cuisine.', address: '25 Foodie Lane, Cityville', imageUrl: 'https://placehold.co/600x400.png' }
+        ]},
+        { day: 2, title: 'Art, Culture & Riverside Views', locations: [
+            { name: 'Museum of Modern Art', description: 'Home to contemporary masterpieces and rotating exhibits.', address: '200 Grand Ave, Cityville', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Riverside Park & Promenade', description: 'A beautiful park for a relaxing walk along the river.', address: '50 Riverwalk Path, Cityville', imageUrl: 'https://placehold.co/600x400.png' }
+        ]},
+        { day: 3, title: 'Panoramic Vistas & Souvenir Shopping', locations: [
+            { name: 'Sky High Observatory', description: 'Get a 360-degree view of the city from the tallest building.', address: '99 Sky Tower, Cityville', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'The Merchant\'s Mile', description: 'A street famous for its unique boutiques and souvenir shops.', address: '75 Shopping Blvd, Cityville', imageUrl: 'https://placehold.co/600x400.png' }
+        ]}
+      ];
+      
+      setItineraryResponse({
+        video: video,
+        itinerary: mockItinerary,
+        videoSummary: "This is a sample itinerary. We couldn't generate one from the selected video, but you can explore the app's features with this mock data!",
+        destination: videoSearchValues.destination,
+        isBannerLoading: false,
+        bannerUrl: 'https://placehold.co/1200x400.png',
+      });
+      
       toast({
         variant: "destructive",
         title: "Itinerary Generation Failed",
-        description: "We couldn't create an itinerary from this video. It might not contain enough location information.",
+        description: "Displaying a sample itinerary. Please try a different video for a custom plan.",
       });
     }
   };
