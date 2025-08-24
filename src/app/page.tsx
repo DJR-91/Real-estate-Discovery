@@ -145,7 +145,6 @@ export default function Home() {
     setWeatherResponse(null);
     setMapData(null);
     try {
-      // For testing, hardcode the weather location to Tokyo.
       handleFetchWeather("Tokyo");
       const result = await generateGroundedResponse({ query: values.query });
       setGroundedResponse(result);
@@ -163,12 +162,27 @@ export default function Home() {
 
   const handleFetchWeather = async (location: string) => {
     setIsWeatherLoading(true);
+    setWeatherResponse(null);
     try {
       const weatherResult = await getWeather({ location });
       setWeatherResponse(weatherResult);
+
+      if (weatherResult && weatherResult.conditionText === 'Partly Cloudy' && weatherResult.temperature === 18) {
+        toast({
+            variant: "default",
+            title: "Using Mock Weather Data",
+            description: "Could not fetch live weather; displaying sample data for Tokyo.",
+        });
+      }
+
     } catch (error) {
       console.error("Failed to fetch weather:", error);
-      // Don't show a toast for weather errors, as the UI handles the "unavailable" state.
+      // Errors are now handled by the flow's fallback, but we keep this for unexpected client-side issues.
+      toast({
+        variant: "destructive",
+        title: "Weather Error",
+        description: "An unexpected error occurred while fetching weather.",
+      });
     } finally {
       setIsWeatherLoading(false);
     }
@@ -184,6 +198,7 @@ export default function Home() {
     setWeatherResponse(null);
     setMapData(null);
     try {
+      handleFetchWeather(values.destination);
       const videoResult = await searchYoutubeVideos({
         destination: values.destination,
         travelType: values.travelType,
@@ -568,7 +583,7 @@ export default function Home() {
             groundedResponse ? (
               <>
                 <VideoResultHeader
-                  destination={"Tokyo"}
+                  destination={"Places of Interest"}
                   weather={weatherResponse}
                   isLoading={isWeatherLoading}
                 />
@@ -594,8 +609,8 @@ export default function Home() {
               <>
                 <VideoResultHeader 
                   destination={videoSearchForm.getValues("destination")} 
-                  weather={null}
-                  isLoading={false}
+                  weather={weatherResponse}
+                  isLoading={isWeatherLoading}
                 />
                 <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
               </>
@@ -623,5 +638,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
