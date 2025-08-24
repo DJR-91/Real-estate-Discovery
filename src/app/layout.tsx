@@ -1,7 +1,9 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import Script from 'next/script';
+import { LiveAPIProvider } from '@/context/live-api-context';
 
 export const metadata: Metadata = {
   title: 'Find Your Next Travel Experience',
@@ -21,7 +23,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased bg-background min-h-screen">
-        {children}
+        <LiveAPIProvider>
+          {children}
+        </LiveAPIProvider>
         <Toaster />
         <Script
           src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&v=beta&map_ids=21b670ae378cc0c7ef920de7&libraries=maps,marker,places,maps3d`}
