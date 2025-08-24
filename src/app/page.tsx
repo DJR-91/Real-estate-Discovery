@@ -357,10 +357,21 @@ export default function Home() {
       setEventsResponse(result);
     } catch (error) {
       console.error("Failed to find events:", error);
+      const mockEvents = {
+        events: [
+          { name: 'Tokyo Ramen Show 2025', description: 'The largest outdoor ramen event in Japan, featuring famous shops from across the country. (Oct 2025)', url: 'https://example.com/ramen-show' },
+          { name: 'Ginza Sake & Food Festival', description: 'Taste premium sake paired with gourmet bites from Ginza\'s top restaurants. (Oct 2025)', url: 'https://example.com/sake-fest' },
+          { name: 'Autumn Truffle Week', description: 'Experience exclusive menus featuring the rare autumn truffle at fine dining establishments. (Oct 2025)', url: 'https://example.com/truffle-week' },
+          { name: 'Christmas Market at Hibiya Park', description: 'Enjoy classic German-style Christmas food, hot wine, and festive decorations. (Dec 2025)', url: 'https://example.com/christmas-market' },
+          { name: 'World Wagyu Expo', description: 'A massive celebration of Japanese beef, with tasting booths and cooking demonstrations. (Dec 2025)', url: 'https://example.com/wagyu-expo' },
+          { name: 'Artisanal Mochi Pounding Festival', description: 'Join in the traditional new year preparations and taste freshly made mochi. (Dec 2025)', url: 'https://example.com/mochi-fest' },
+        ]
+      };
+      setEventsResponse(mockEvents);
       toast({
         variant: "destructive",
         title: "Event Search Failed",
-        description: "We couldn't find any trendy events for this destination. Please try again later.",
+        description: "We couldn't find trendy events, so here's a sample list of food events in Tokyo.",
       });
     } finally {
       setIsEventsLoading(false);
@@ -562,5 +573,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
