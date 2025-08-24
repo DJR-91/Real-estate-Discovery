@@ -74,6 +74,7 @@ export interface ItineraryData {
   destination: string;
   bannerUrl?: string;
   isBannerLoading: boolean;
+  bannerAiHint?: string;
 }
 
 export type MapData = {
@@ -287,7 +288,7 @@ export default function Home() {
           description: "Displaying a placeholder image.",
         });
         // Update the state with a placeholder banner and set loading to false
-        setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: 'https://placehold.co/1200x400.png', isBannerLoading: false }) : null);
+        setItineraryResponse(prev => prev ? ({ ...prev, bannerUrl: 'https://placehold.co/1200x400.png', bannerAiHint: 'tokyo tower', isBannerLoading: false }) : null);
       }
 
     } catch (error) {
@@ -319,6 +320,7 @@ export default function Home() {
         destination: "Tokyo",
         isBannerLoading: false,
         bannerUrl: 'https://placehold.co/1200x400.png',
+        bannerAiHint: 'tokyo tower',
       });
       
       toast({

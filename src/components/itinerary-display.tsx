@@ -45,7 +45,7 @@ function getIconForLocation(name: string): React.ReactNode {
 }
 
 export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEvents, isEventsLoading }: ItineraryDisplayProps) {
-  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading } = data;
+  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint } = data;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -59,7 +59,7 @@ export function ItineraryDisplay({ data, onFindHotels, isHotelLoading, onFindEve
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              data-ai-hint="travel banner"
+              data-ai-hint={bannerAiHint || "travel banner"}
             />
           )}
         </div>
