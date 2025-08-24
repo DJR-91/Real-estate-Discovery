@@ -133,6 +133,14 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
     });
   };
 
+  const getIconForLocation = (name: string): string => {
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes("restaurant") || lowerName.includes("cafe") || lowerName.includes("food")) return "🍴";
+    if (lowerName.includes("hotel") || lowerName.includes("inn") || lowerName.includes("lodging")) return "🏨";
+    if (lowerName.includes("park") || lowerName.includes("museum") || lowerName.includes("temple") || lowerName.includes("shrine") || lowerName.includes("tower") || lowerName.includes("market")) return "🏛️";
+    return "📍";
+  };
+
   useEffect(() => {
     if (!mapRef.current || !markerLib || !maps3dLib || !itinerary) {
       return;
@@ -156,10 +164,26 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
             const position = await geocodeAddress(location.address);
             if (position) {
                 geocodedLocations.push(position);
+
+                const icon = getIconForLocation(location.name);
+
+                // Create a custom HTML element for the marker
+                const markerElement = document.createElement('div');
+                markerElement.style.padding = '4px 8px';
+                markerElement.style.background = 'white';
+                markerElement.style.borderRadius = '9999px';
+                markerElement.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                markerElement.style.fontSize = '1.5rem'; // 24px
+                markerElement.style.display = 'flex';
+                markerElement.style.alignItems = 'center';
+                markerElement.style.justifyContent = 'center';
+                markerElement.textContent = icon;
+                
                 const marker = new markerLib.AdvancedMarkerElement({
                     map: map as unknown as google.maps.Map, // Cast since Map3D is not directly a Map
                     position: position,
                     title: location.name,
+                    content: markerElement,
                 });
                 newMarkers.push(marker);
             }
