@@ -5,8 +5,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
 import { cn } from '@/lib/utils';
-import { Mic, Video } from 'lucide-react';
+import { Mic, Send, Video } from 'lucide-react';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Card, CardContent } from './ui/card';
 
 
 function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
@@ -73,10 +75,10 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
 
 
 export function LiveCameraView() {
- const { connected, stream, connect, disconnect } = useLiveAPIContext();
+ const { connected, stream, connect, disconnect, send, text: responseText, startAudioTurn, stopAudioTurn, isListening } = useLiveAPIContext();
  const videoRef = useRef<HTMLVideoElement>(null);
-
-
+ const [inputText, setInputText] = useState('');
+ 
  useEffect(() => {
    if (stream && videoRef.current) {
      videoRef.current.srcObject = stream;
@@ -91,46 +93,84 @@ export function LiveCameraView() {
      connect();
    }
  };
+ 
+  const handleSendText = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputText.trim() && connected) {
+      send({ text: inputText });
+      setInputText('');
+    }
+  };
 
 
  const showVisualizer = stream && connected;
 
 
  return (
-   <div className="fixed bottom-6 left-6 z-50">
-     <div className={cn(
-       "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300",
-       showVisualizer ? "w-64" : "w-24"
-     )}>
-       <div className="relative group w-24 h-24 flex-shrink-0">
-         <div className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center">
-           {connected && stream ? (
-             <video
-               ref={videoRef}
-               className="w-full h-full object-cover scale-x-[-1]"
-               autoPlay
-               playsInline
-               muted
-             />
-           ) : (
-             <Mic className="text-muted-foreground" size={32} />
-           )}
-         </div>
-         <div className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-           <Button
-             size="icon"
-             variant={connected ? 'destructive' : 'default'}
-             onClick={toggleConnection}
-             className="rounded-full"
-           >
-             <Video size={20} />
-           </Button>
-         </div>
-       </div>
-       <div className="w-40 flex-shrink-0">
-           {showVisualizer && <VoiceVisualizer stream={stream} />}
-       </div>
-     </div>
+    <div className="fixed bottom-6 left-6 z-50 flex items-end gap-4">
+        <div className={cn(
+        "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300",
+        showVisualizer ? "w-64" : "w-24"
+        )}>
+            <div className="relative group w-24 h-24 flex-shrink-0">
+                <div 
+                    className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center cursor-pointer border-2 border-transparent"
+                    onMouseDown={startAudioTurn}
+                    onMouseUp={stopAudioTurn}
+                    onTouchStart={startAudioTurn}
+                    onTouchEnd={stopAudioTurn}
+                >
+                    {isListening ? (
+                        <Mic className="text-destructive" size={32} />
+                    ) : connected && stream ? (
+                    <video
+                        ref={videoRef}
+                        className="w-full h-full object-cover scale-x-[-1]"
+                        autoPlay
+                        playsInline
+                        muted
+                    />
+                    ) : (
+                    <Mic className="text-muted-foreground" size={32} />
+                    )}
+                </div>
+                <div className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                        size="icon"
+                        variant={connected ? 'destructive' : 'default'}
+                        onClick={toggleConnection}
+                        className="rounded-full"
+                    >
+                        <Video size={20} />
+                    </Button>
+                </div>
+            </div>
+            <div className="w-40 flex-shrink-0">
+                {showVisualizer && <VoiceVisualizer stream={stream} />}
+            </div>
+        </div>
+        {connected && (
+            <div className="flex flex-col gap-2 w-96">
+                {responseText && (
+                    <Card className="bg-muted/80 backdrop-blur-sm border-primary/20 p-4 animate-in fade-in duration-300">
+                        <CardContent className="p-0">
+                            <p className="text-sm">{responseText}</p>
+                        </CardContent>
+                    </Card>
+                )}
+                <form onSubmit={handleSendText} className="flex gap-2">
+                    <Input 
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        placeholder="Type a message..."
+                        className="bg-muted/80 backdrop-blur-sm border-primary/20"
+                    />
+                    <Button type="submit" size="icon" disabled={!inputText.trim()}>
+                        <Send />
+                    </Button>
+                </form>
+            </div>
+        )}
    </div>
  );
 }
