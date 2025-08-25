@@ -1,0 +1,85 @@
+
+'use client';
+
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
+import type { LiveSession, Part } from '@google/genai';
+import type { ItineraryData } from '@/app/page';
+
+interface LiveState {
+  // Session and connection state
+  session: LiveSession | null;
+  connected: boolean;
+  stream: MediaStream | null;
+  error: string | null;
+
+  // UI/Interaction state
+  text: string;
+  isListening: boolean;
+  isSpeaking: boolean;
+  volume: number;
+  
+  // Tour-specific state
+  itineraryData: ItineraryData | null;
+  tourIndex: number;
+}
+
+interface LiveActions {
+  // Connection actions
+  setSession: (session: LiveSession | null) => void;
+  setConnected: (connected: boolean) => void;
+  setStream: (stream: MediaStream | null) => void;
+  setError: (error: string | null) => void;
+  
+  // UI/Interaction actions
+  setText: (text: string) => void;
+  appendText: (chunk: string) => void;
+  setIsListening: (isListening: boolean) => void;
+  setIsSpeaking: (isSpeaking: boolean) => void;
+  setVolume: (volume: number) => void;
+  
+  // Tour actions
+  startTour: (itineraryData: ItineraryData) => void;
+  setTourIndex: (index: number) => void;
+  
+  // Lifecycle actions
+  reset: () => void;
+}
+
+const initialState: LiveState = {
+  session: null,
+  connected: false,
+  stream: null,
+  error: null,
+  text: '',
+  isListening: false,
+  isSpeaking: false,
+  volume: 0,
+  itineraryData: null,
+  tourIndex: -1,
+};
+
+export const useLiveStore = create<LiveState & LiveActions>()(
+  immer((set) => ({
+    ...initialState,
+    
+    setSession: (session) => set({ session }),
+    setConnected: (connected) => set({ connected }),
+    setStream: (stream) => set({ stream }),
+    setError: (error) => set({ error }),
+
+    setText: (text) => set({ text }),
+    appendText: (chunk) => set((state) => { state.text += chunk }),
+    setIsListening: (isListening) => set({ isListening }),
+    setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
+    setVolume: (volume) => set({ volume }),
+    
+    startTour: (itineraryData) => set({ itineraryData, tourIndex: 0, text: '' }),
+    setTourIndex: (index) => set({ tourIndex: index }),
+
+    reset: () => set(initialState),
+  }))
+);
+
+// Derived state and utility functions can be accessed via selectors
+export const selectIsTourActive = (state: LiveState) => state.itineraryData !== null && state.connected;

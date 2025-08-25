@@ -16,7 +16,7 @@ interface LiveCameraViewProps {
 }
 
 export function LiveCameraView({ itineraryData }: LiveCameraViewProps) {
-  const { connected, text, error, isSpeaking, isListening, connect, disconnect, send } = useLiveAPIContext();
+  const { connected, text, error, isSpeaking, isListening, volume, connect, disconnect, send } = useLiveAPIContext();
   const [inputValue, setInputValue] = React.useState('');
 
   const handleConnect = () => {
@@ -50,13 +50,19 @@ export function LiveCameraView({ itineraryData }: LiveCameraViewProps) {
       );
     }
     if (isListening) {
-      return (
-        <div className="flex items-center gap-2 text-green-600">
-          <Mic />
-          <span>Listening...</span>
-        </div>
-      );
-    }
+        return (
+          <div className="flex items-center gap-2 text-green-600">
+            <Mic />
+            <span>Listening</span>
+            <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                    className="h-full bg-green-500 rounded-full transition-all duration-75"
+                    style={{ width: `${Math.min(volume * 100, 100)}%` }}
+                />
+            </div>
+          </div>
+        );
+      }
     return (
         <div className="flex items-center gap-2 text-muted-foreground">
             <MicOff />

@@ -1,28 +1,26 @@
 
 'use client';
 
-
 import React, { createContext, useContext } from 'react';
-import { useLiveAPI, UseLiveAPIResults } from '@/hooks/use-live-api';
+import { useLiveAPI } from '@/hooks/use-live-api';
+import { useLiveStore } from '@/store/live-store';
 
-
-const LiveAPIContext = createContext<UseLiveAPIResults | undefined>(undefined);
-
+// Create a context to hold the store's state and actions, though we won't pass it directly.
+const LiveAPIContext = createContext(null);
 
 export function LiveAPIProvider({ children }: { children: React.ReactNode }) {
- const liveAPI = useLiveAPI();
- return (
-   <LiveAPIContext.Provider value={liveAPI}>
-     {children}
-   </LiveAPIContext.Provider>
- );
+  // Initialize the hook. It will manage its own state via the Zustand store.
+  useLiveAPI();
+
+  return (
+    <LiveAPIContext.Provider value={null}>
+      {children}
+    </LiveAPIContext.Provider>
+  );
 }
 
-
+// Custom hook to access the Zustand store.
+// This is now the primary way components should interact with the live state.
 export function useLiveAPIContext() {
- const context = useContext(LiveAPIContext);
- if (context === undefined) {
-   throw new Error('useLiveAPIContext must be used within a LiveAPIProvider');
- }
- return context;
+  return useLiveStore();
 }

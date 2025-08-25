@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useRef } from 'react';
@@ -8,7 +9,7 @@ export function LiveVideoDisplay() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // When the stream from the hook is available, attach it to the video element.
+    // When the stream from the store is available, attach it to the video element.
     if (stream && videoRef.current) {
       videoRef.current.srcObject = stream;
     }
