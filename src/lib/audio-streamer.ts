@@ -68,9 +68,6 @@ export class AudioStreamer {
        float32Array[i] = int16 / 32768;
      } catch (e) {
        console.error(e);
-       // console.log(
-       //   `dataView.length: ${dataView.byteLength},  i * 2: ${i * 2}`,
-       // );
      }
    }
 
@@ -152,11 +149,6 @@ export class AudioStreamer {
        });
      }
 
-     // i added this trying to fix clicks
-     // this.gainNode.gain.setValueAtTime(0, 0);
-     // this.gainNode.gain.linearRampToValueAtTime(1, 1);
-
-     // Ensure we never schedule in the past
      const startTime = Math.max(this.scheduledTime, this.context.currentTime);
      this.source.start(startTime);
      this.onStart();
