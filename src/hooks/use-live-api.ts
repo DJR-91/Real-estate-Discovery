@@ -1,19 +1,18 @@
-
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { Part } from '@google/genai';
+import { GoogleGenAI, LiveSession, Part } from '@google/genai';
 import { AudioStreamer } from '@/lib/audio-streamer';
-import { audioContext } from '@/lib/utils';
-import { MultimodalLiveClient } from '@/lib/multimodal-live-client';
+import { audioContext, base64ToArrayBuffer } from '@/lib/utils';
 
 export interface UseLiveAPIResults {
-  client: MultimodalLiveClient | null;
+  session: LiveSession | null;
   connected: boolean;
   text: string;
   error: string | null;
-  isSpeaking: boolean;
   isListening: boolean;
+  isSpeaking: boolean;
+  volume: number; // For the audio visualizer
   connect: () => Promise<void>;
   disconnect: () => void;
   send: (parts: Part | Part[]) => void;
@@ -21,179 +20,232 @@ export interface UseLiveAPIResults {
 }
 
 export function useLiveAPI(): UseLiveAPIResults {
-  const clientRef = useRef<MultimodalLiveClient | null>(null);
+  const sessionRef = useRef<LiveSession | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
-  const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
-  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const inputAudioContextRef = useRef<AudioContext | null>(null);
+  // Refs for client-side silence detection
+  const silenceDetectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasSpokenRef = useRef(false);
 
   const [connected, setConnected] = useState(false);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [volume, setVolume] = useState(0);
 
-  const handleAudio = useCallback((data: ArrayBuffer) => {
-    if (audioStreamerRef.current) {
-      audioStreamerRef.current.addPCM16(new Uint8Array(data));
-    }
-  }, []);
-
-  const handleContent = useCallback((content: any) => {
-    const modelTurn = content.modelTurn || content.groundingResponse;
-    if (modelTurn) {
-        const parts = modelTurn.parts || [];
-        const textPart = parts.find((p: any) => 'text' in p);
-        if (textPart) {
-            setText(prev => prev + textPart.text);
+  const endAudioTurn = useCallback(() => {
+    if (sessionRef.current && isListening) {
+        console.log('--- Ending audio turn due to silence ---');
+        setIsListening(false);
+        hasSpokenRef.current = false;
+        if (silenceDetectionTimeoutRef.current) {
+            clearTimeout(silenceDetectionTimeoutRef.current);
+            silenceDetectionTimeoutRef.current = null;
         }
+        sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: [] }], turnComplete: true });
     }
-  }, []);
+  }, [isListening]);
   
-  const handleTurnComplete = useCallback(() => {
-    setText('');
-  }, []);
-
-  const stopListening = useCallback(() => {
-    if (scriptProcessorNodeRef.current && sourceNodeRef.current && inputAudioContextRef.current) {
-        scriptProcessorNodeRef.current.disconnect();
-        sourceNodeRef.current.disconnect();
+  const startListeningTurn = useCallback(() => {
+    if (sessionRef.current) {
+      console.log('--- Starting new listening turn ---');
+      hasSpokenRef.current = false; // Reset for the new turn
+      setText('');
+      setIsListening(true);
+      sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: [] }], turnComplete: false });
     }
-    if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
-        setStream(null);
-    }
-    setIsListening(false);
   }, []);
 
   const disconnect = useCallback(() => {
-    clientRef.current?.disconnect();
-    clientRef.current = null;
-
-    stopListening();
-
-    if (audioStreamerRef.current) {
-      audioStreamerRef.current.stop();
-      audioStreamerRef.current = null;
+    if (sessionRef.current) {
+      sessionRef.current.close();
+      sessionRef.current = null;
     }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    if (silenceDetectionTimeoutRef.current) {
+        clearTimeout(silenceDetectionTimeoutRef.current);
+    }
+    audioStreamerRef.current?.stop();
+    setStream(null);
     setConnected(false);
     setText('');
     setError(null);
+    setIsListening(false);
     setIsSpeaking(false);
-  }, [stopListening]);
+  }, []);
 
+  useEffect(() => {
+    if (stream && isListening) {
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      analyser.fftSize = 256;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      let animationFrameId: number;
 
-  const startListening = useCallback(async () => {
-    if (!clientRef.current || !clientRef.current.ws) {
-        setError("Not connected to the server.");
-        return;
-    }
-    if (isListening) return;
+      const SILENCE_THRESHOLD = 0.01; // Volume level to consider as silence
+      const SILENCE_DURATION_MS = 2000; // 2 seconds of silence to end turn
 
-    try {
-        const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        mediaStreamRef.current = userMediaStream;
-        setStream(userMediaStream);
-        
-        const inputCtx = await audioContext({id: 'audio-in', config: {sampleRate: 16000}});
-        inputAudioContextRef.current = inputCtx;
+      const monitor = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((acc, val) => acc + val, 0) / bufferLength;
+        const currentVolume = average / 128;
+        setVolume(currentVolume);
 
-        sourceNodeRef.current = inputCtx.createMediaStreamSource(userMediaStream);
-        const bufferSize = 256;
-        scriptProcessorNodeRef.current = inputCtx.createScriptProcessor(bufferSize, 1, 1);
-
-        scriptProcessorNodeRef.current.onaudioprocess = (event) => {
-            const pcmData = event.inputBuffer.getChannelData(0);
-            const int16 = new Int16Array(pcmData.length);
-            for (let i = 0; i < pcmData.length; i++) {
-                int16[i] = pcmData[i] * 32768;
+        if (currentVolume > SILENCE_THRESHOLD) {
+            hasSpokenRef.current = true; // User has started speaking
+            // If there's a silence timer running, cancel it
+            if (silenceDetectionTimeoutRef.current) {
+                clearTimeout(silenceDetectionTimeoutRef.current);
+                silenceDetectionTimeoutRef.current = null;
             }
-            clientRef.current?.sendRealtimeInput([{
-                mimeType: 'audio/pcm;rate=16000',
-                data: Buffer.from(int16.buffer).toString('base64'),
-            }]);
-        };
+        } else if (hasSpokenRef.current && !silenceDetectionTimeoutRef.current) {
+            // User has stopped speaking, start the silence timer
+            silenceDetectionTimeoutRef.current = setTimeout(() => {
+                endAudioTurn();
+            }, SILENCE_DURATION_MS);
+        }
         
-        sourceNodeRef.current.connect(scriptProcessorNodeRef.current);
-        scriptProcessorNodeRef.current.connect(inputCtx.destination);
+        animationFrameId = requestAnimationFrame(monitor);
+      };
 
-        setIsListening(true);
-    } catch(e) {
-        console.error("Microphone/camera access denied:", e);
-        setError("Microphone and camera access are required to use this feature.");
+      monitor();
+
+      return () => {
+        cancelAnimationFrame(animationFrameId);
+        if (silenceDetectionTimeoutRef.current) {
+            clearTimeout(silenceDetectionTimeoutRef.current);
+        }
+        source.disconnect();
+        analyser.disconnect();
+        audioContext.close().catch(console.error);
+      };
+    } else {
+      setVolume(0);
     }
-
-  }, [isListening]);
-
+  }, [stream, isListening, endAudioTurn]);
 
   const connect = useCallback(async () => {
-    if (clientRef.current) {
+    if (sessionRef.current) {
       return;
     }
     setError(null);
     setText('');
 
-    const client = new MultimodalLiveClient({
-      url: `wss://studio-api.fexwork.com/proxy/gemini-live`,
-    });
-    clientRef.current = client;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+    if (!apiKey) {
+      setError("API key is not configured.");
+      return;
+    }
 
-    client.on('open', async () => {
-      setConnected(true);
+    try {
       if (!audioStreamerRef.current) {
-        const audioCtx = await audioContext({ id: "audio-out" });
+        const audioCtx = await audioContext({ id: "audio-out", config: { sampleRate: 24000 } });
         const streamer = new AudioStreamer(audioCtx);
         streamer.onStart = () => setIsSpeaking(true);
         streamer.onComplete = () => setIsSpeaking(false);
         audioStreamerRef.current = streamer;
       }
-      startListening();
-    });
+      if (audioStreamerRef.current.context.state === 'suspended') {
+        await audioStreamerRef.current.resume();
+      }
+      
+      const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      mediaStreamRef.current = userMediaStream;
+      setStream(userMediaStream);
 
-    client.on('close', () => disconnect());
-    client.on('error', (e: any) => {
-        console.error('Live API Error:', e);
-        setError('An error with the live connection occurred.');
-        disconnect();
-    });
-    client.on('audio', handleAudio);
-    client.on('content', handleContent);
-    client.on('turncomplete', handleTurnComplete);
-    client.on('interrupted', () => {
-        setText('');
-        audioStreamerRef.current?.stop();
-    });
+      const genAI = new GoogleGenAI({ apiKey });
+      
+      const newSession = await genAI.live.connect({
+        model: 'gemini-live-2.5-flash-preview',
+        config: {
+          audio: {input: {encoding: 'LINEAR16', sampleRateHertz: 16000}, output: {encoding: 'LINEAR16', sampleRateHertz: 24000}},
+          video: {input: {encoding: 'H264'}},
+          text: {},
+        },
+        stream: userMediaStream,
+        callbacks: {
+          onopen: () => {
+            setConnected(true);
+          },
+          onclose: () => disconnect(),
+          onerror: (e) => {
+            console.error('Live API Error:', e);
+            setError('An error with the live connection occurred.');
+            disconnect();
+          },
+          onmessage: (message) => {
+            if (message.serverContent) {
+              if ('interrupted' in message.serverContent) {
+                audioStreamerRef.current?.stop();
+                setText('');
+              } else if ('modelTurn' in message.serverContent) {
+                setIsListening(false);
+                if (silenceDetectionTimeoutRef.current) {
+                    clearTimeout(silenceDetectionTimeoutRef.current);
+                    silenceDetectionTimeoutRef.current = null;
+                }
+                const parts = message.serverContent.modelTurn?.parts || [];
+                parts.forEach(part => {
+                  if ('text' in part) {
+                    setText(prev => prev + part.text);
+                  } else if (part.inlineData?.mimeType?.startsWith("audio/")) {
+                    const audioData = base64ToArrayBuffer(part.inlineData.data);
+                    audioStreamerRef.current?.addPCM16(new Uint8Array(audioData));
+                  }
+                });
+              } else if ('turnComplete' in message.serverContent) {
+                setIsSpeaking(false);
+                startListeningTurn();
+              }
+            } else if (message.clientContent?.turns?.some(t => 'text' in t && t.text)) {
+              setText('');
+            }
+          },
+        },
+      });
 
-    try {
-        await client.connect();
-    } catch(e: any) {
-        console.error('Failed to connect to Live API:', e);
-        setError(e.message || 'Failed to initialize the API client.');
-        disconnect();
+      sessionRef.current = newSession;
+      startListeningTurn();
+
+    } catch (e: any) {
+      console.error('Failed to initialize or connect to Live API:', e);
+      setError(e.message || 'Failed to initialize the API client.');
+      disconnect();
     }
-  }, [disconnect, handleAudio, handleContent, handleTurnComplete, startListening]);
-
+  }, [disconnect, startListeningTurn]);
 
   const send = useCallback((parts: Part | Part[]) => {
-    if (clientRef.current) {
-        setText('');
-        clientRef.current.send(parts);
+    if (sessionRef.current) {
+      setIsListening(false);
+      sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: Array.isArray(parts) ? parts : [parts] }] });
     }
   }, []);
 
-  return {
-    client: clientRef.current,
-    connected,
+  // These functions are no longer needed by the UI but are kept for potential future use or debugging.
+  const startAudioTurn = useCallback(() => {}, []);
+  const stopAudioTurn = useCallback(() => {}, []);
+
+  return { 
+    session: sessionRef.current,
+    connected, 
     text,
-    error,
-    connect,
-    disconnect,
+    error, 
+    connect, 
+    disconnect, 
     send,
     stream,
-    isSpeaking,
     isListening,
+    isSpeaking,
+    volume,
+    startAudioTurn, // Kept for API consistency, but not used by UI in this mode.
+    stopAudioTurn,  // Kept for API consistency, but not used by UI in this mode.
   };
 }

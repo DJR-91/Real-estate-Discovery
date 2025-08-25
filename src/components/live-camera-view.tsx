@@ -8,17 +8,11 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Input } from './ui/input';
+import { LiveVideoDisplay } from './live-video-display';
 
 export function LiveCameraView() {
-  const { connected, stream, text, error, isSpeaking, isListening, connect, disconnect, send } = useLiveAPIContext();
-  const videoRef = React.useRef<HTMLVideoElement>(null);
+  const { connected, text, error, isSpeaking, isListening, connect, disconnect, send } = useLiveAPIContext();
   const [inputValue, setInputValue] = React.useState('');
-
-  React.useEffect(() => {
-    if (stream && videoRef.current) {
-      videoRef.current.srcObject = stream;
-    }
-  }, [stream]);
 
   const handleConnect = () => {
     if (!connected) {
@@ -72,14 +66,8 @@ export function LiveCameraView() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
           <div className="flex-shrink-0 relative w-24 h-24">
             <div className="absolute inset-0 rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-primary/20">
-              {stream ? (
-                <video
-                  ref={videoRef}
-                  className="w-full h-full object-cover scale-x-[-1]"
-                  autoPlay
-                  playsInline
-                  muted
-                />
+              {connected ? (
+                <LiveVideoDisplay />
               ) : (
                 <Video className="text-muted-foreground" size={48} />
               )}
