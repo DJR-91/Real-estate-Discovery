@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -54,6 +54,7 @@ import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { VideoResultHeader } from "@/components/video-result-header";
 import { EventsDisplay } from "@/components/events-display";
 import { LiveCameraView } from "@/components/live-camera-view";
+import { useLiveStore } from "@/store/live-store";
 
 
 const groundedSearchSchema = z.object({
@@ -136,6 +137,22 @@ export default function Home() {
       travelType: "",
     },
   });
+
+  // Subscribe to tour index changes to update the map
+  const tourIndex = useLiveStore((state) => state.tourIndex);
+
+  useEffect(() => {
+    if (tourIndex >= 0 && itineraryResponse) {
+      const allLocations = itineraryResponse.itinerary.flatMap(day => day.locations);
+      if (tourIndex < allLocations.length) {
+        const currentLocation = allLocations[tourIndex];
+        if (currentLocation.address && currentLocation.address !== "Address not available") {
+            handleMapLocationSelect(currentLocation);
+        }
+      }
+    }
+  }, [tourIndex, itineraryResponse]);
+
 
   async function onGroundedSearchSubmit(
     values: z.infer<typeof groundedSearchSchema>
@@ -286,14 +303,15 @@ export default function Home() {
     try {
       const itineraryResult = await generateItinerary(itineraryInput);
       
-      setItineraryResponse({
+      const newItineraryData = {
         video: video,
         itinerary: itineraryResult.itinerary,
         videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
         isBannerLoading: true,
         isWeatherLoading: true,
-      });
+      };
+      setItineraryResponse(newItineraryData);
 
       handleFetchWeather(videoSearchValues.destination);
 
@@ -642,3 +660,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
