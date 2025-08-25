@@ -28,6 +28,7 @@ export interface UseLiveAPIResults {
  isListening: boolean;
  startAudioTurn: () => void;
  stopAudioTurn: () => void;
+ startOngoingAudioTurn: () => void;
 }
 
 export function useLiveAPI(): UseLiveAPIResults {
@@ -125,7 +126,14 @@ export function useLiveAPI(): UseLiveAPIResults {
        },
        stream: mediaStream,
        callbacks: {
-         onopen: () => setConnected(true),
+         onopen: () => {
+            setConnected(true);
+            // Automatically start an ongoing audio turn once connected
+            if (sessionRef.current) {
+                setIsListening(true);
+                sessionRef.current.sendClientContent({ turns: [], turnComplete: false });
+            }
+         },
          onclose: () => disconnect(),
          onerror: (e) => {
            console.error('🔴 Live API Error:', e);
@@ -140,6 +148,11 @@ export function useLiveAPI(): UseLiveAPIResults {
                return;
              }
              if ('turnComplete' in message.serverContent) {
+                // In always-on mode, restart listening after turn is complete
+                if(connected && sessionRef.current) {
+                    setIsListening(true);
+                    sessionRef.current.sendClientContent({ turns: [], turnComplete: false });
+                }
                return;
              }
              if ('modelTurn' in message.serverContent) {
@@ -172,7 +185,7 @@ export function useLiveAPI(): UseLiveAPIResults {
        streamRef.current = null;
      }
    }
- }, [model, voice, initializeAudio, disconnect]);
+ }, [model, voice, initializeAudio, disconnect, connected]);
 
  const send = useCallback((parts: Part | Part[]) => {
    if (sessionRef.current) {
@@ -194,6 +207,14 @@ export function useLiveAPI(): UseLiveAPIResults {
      sessionRef.current.sendClientContent({ turns: [], turnComplete: true });
    }
  }, [connected, isListening]);
+ 
+  const startOngoingAudioTurn = useCallback(() => {
+    if (sessionRef.current && connected && !isListening) {
+      setText('');
+      setIsListening(true);
+      sessionRef.current.sendClientContent({ turns: [], turnComplete: false });
+    }
+  }, [connected, isListening]);
 
  return {
    session: sessionRef.current,
@@ -214,5 +235,6 @@ export function useLiveAPI(): UseLiveAPIResults {
    isListening,
    startAudioTurn,
    stopAudioTurn,
+   startOngoingAudioTurn,
  };
 }

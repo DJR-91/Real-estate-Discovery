@@ -67,7 +67,7 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
 }
 
 export function LiveCameraView() {
- const { connected, stream, connect, disconnect, send, text: responseText, startAudioTurn, stopAudioTurn, isListening } = useLiveAPIContext();
+ const { connected, stream, connect, disconnect, send, text: responseText, isListening } = useLiveAPIContext();
  const videoRef = useRef<HTMLVideoElement>(null);
  const [inputText, setInputText] = useState('');
  const [isTextEntryVisible, setIsTextEntryVisible] = useState(false);
@@ -129,22 +129,9 @@ export function LiveCameraView() {
               {connected ? (
                 <>
                   <div className='flex gap-2 items-center'>
-                    <Button
-                        size="sm"
-                        onMouseDown={startAudioTurn}
-                        onMouseUp={stopAudioTurn}
-                        onTouchStart={startAudioTurn}
-                        onTouchEnd={stopAudioTurn}
-                        className={cn(
-                            "w-32",
-                            isListening ? "bg-destructive hover:bg-destructive/90" : ""
-                        )}
-                    >
-                        <Mic className="mr-2 h-4 w-4" />
-                        {isListening ? 'Listening...' : 'Push to Talk'}
-                    </Button>
-                    <Button onClick={disconnect} variant="outline" size="icon" className="rounded-full">
-                        <Power className="h-4 w-4" />
+                    <Button onClick={disconnect} variant="outline" size="sm">
+                        <Power className="mr-2 h-4 w-4" />
+                        Disconnect
                     </Button>
                   </div>
                 </>
