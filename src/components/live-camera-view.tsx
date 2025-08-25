@@ -86,18 +86,12 @@ export function LiveCameraView() {
     }
   };
 
-  const handleMicPress = () => {
-    if (!connected) {
-        connect();
-    } else {
-        startAudioTurn();
-    }
-  }
-
-  const handleMicRelease = () => {
-    if (isListening) {
-        stopAudioTurn();
-    }
+  const toggleConnection = () => {
+      if (connected) {
+          disconnect();
+      } else {
+          connect();
+      }
   }
 
  const showVisualizer = stream && isListening;
@@ -106,14 +100,11 @@ export function LiveCameraView() {
     <div className="flex items-end gap-4">
         <div className={cn(
         "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300",
-        connected ? (showVisualizer ? 'w-[450px]' : 'w-[300px]') : 'w-auto px-4'
+        connected ? (showVisualizer ? 'w-auto' : 'w-auto') : 'w-auto'
         )}>
             <div 
                 className="relative w-24 h-24 flex-shrink-0 group cursor-pointer"
-                onMouseDown={handleMicPress}
-                onMouseUp={handleMicRelease}
-                onTouchStart={handleMicPress}
-                onTouchEnd={handleMicRelease}
+                onClick={toggleConnection}
             >
                 <div 
                     className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-primary transition-colors"
@@ -134,21 +125,28 @@ export function LiveCameraView() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 px-4">
+            <div className="flex flex-col items-start gap-1 px-4">
               {connected ? (
                 <>
-                  <div
-                    className={cn(
-                        "flex items-center justify-center w-32 h-10 rounded-md text-sm font-medium", 
-                        isListening ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
-                    )}
-                  >
-                    <Mic className="mr-2 h-4 w-4" />
-                    {isListening ? 'Listening...' : 'Push to Talk'}
+                  <div className='flex gap-2 items-center'>
+                    <Button
+                        size="sm"
+                        onMouseDown={startAudioTurn}
+                        onMouseUp={stopAudioTurn}
+                        onTouchStart={startAudioTurn}
+                        onTouchEnd={stopAudioTurn}
+                        className={cn(
+                            "w-32",
+                            isListening ? "bg-destructive hover:bg-destructive/90" : ""
+                        )}
+                    >
+                        <Mic className="mr-2 h-4 w-4" />
+                        {isListening ? 'Listening...' : 'Push to Talk'}
+                    </Button>
+                    <Button onClick={disconnect} variant="outline" size="icon" className="rounded-full">
+                        <Power className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button onClick={disconnect} variant="outline" size="icon" className="rounded-full">
-                      <Power className="h-4 w-4" />
-                  </Button>
                 </>
               ) : (
                 <div className="text-center">
