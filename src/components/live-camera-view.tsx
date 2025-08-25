@@ -9,14 +9,19 @@ import { Card, CardContent } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Input } from './ui/input';
 import { LiveVideoDisplay } from './live-video-display';
+import type { ItineraryData } from '@/app/page';
 
-export function LiveCameraView() {
+interface LiveCameraViewProps {
+    itineraryData: ItineraryData;
+}
+
+export function LiveCameraView({ itineraryData }: LiveCameraViewProps) {
   const { connected, text, error, isSpeaking, isListening, connect, disconnect, send } = useLiveAPIContext();
   const [inputValue, setInputValue] = React.useState('');
 
   const handleConnect = () => {
     if (!connected) {
-      connect();
+      connect(itineraryData);
     } else {
       disconnect();
     }
@@ -83,11 +88,11 @@ export function LiveCameraView() {
           <div className="flex-grow w-full space-y-4 text-center sm:text-left">
             {!connected ? (
               <div>
-                <p className="font-bold text-lg">Start Live Interaction</p>
-                <p className="text-sm text-muted-foreground">Connect your camera and microphone to talk to Gemini.</p>
+                <p className="font-bold text-lg">Start Live Itinerary Tour</p>
+                <p className="text-sm text-muted-foreground">Connect your camera and mic to start an interactive tour.</p>
                 <Button onClick={handleConnect} className="mt-2">
                   <Video className="mr-2" />
-                  Connect
+                  Connect and Start Tour
                 </Button>
               </div>
             ) : (
@@ -101,7 +106,7 @@ export function LiveCameraView() {
                 </div>
                 <div className="flex gap-2">
                     <Input 
-                        placeholder="Or type a message..."
+                        placeholder="Or type 'next' to continue..."
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
                         onKeyPress={handleKeyPress}

@@ -625,9 +625,12 @@ export default function Home() {
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
               <MapDisplay data={mapData} itinerary={itineraryResponse?.itinerary} />
-              <div className="flex justify-center">
-                  <LiveCameraView />
-              </div>
+            </div>
+          )}
+
+          {itineraryResponse && !isItineraryLoading && (
+            <div className="pt-8 space-y-8">
+                <LiveCameraView itineraryData={itineraryResponse} />
             </div>
           )}
 
