@@ -11,7 +11,6 @@ import { useCallbackRef, useDeepCompareEffect } from '@/hooks/utility-hooks';
 import '@/hooks/map-3d-types';
 import type { GenerateItineraryOutput } from '@/ai/schemas/itinerary-schema';
 import { RoutesApi } from '@/services/routes-api';
-import { LiveCameraView } from './live-camera-view';
 import { Separator } from './ui/separator';
 
 // The new reusable Map3D component logic, adapted from your provided code
@@ -267,11 +266,6 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
         <div className="md:col-span-1">
             {data.place && <PlaceCard place={data.place} />}
         </div>
-      </div>
-      <Separator />
-      <div className="p-6">
-        <h3 className="text-xl font-headline text-primary mb-4">Live Interaction</h3>
-        <LiveCameraView />
       </div>
     </div>
   );

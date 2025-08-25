@@ -54,6 +54,7 @@ import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { VideoResultHeader } from "@/components/video-result-header";
 import { EventsDisplay } from "@/components/events-display";
+import { LiveCameraView } from "@/components/live-camera-view";
 
 
 const groundedSearchSchema = z.object({
@@ -515,7 +516,7 @@ export default function Home() {
             <Card className="w-full shadow-lg max-w-4xl mx-auto">
               <CardContent className="p-6">
                 <p className="text-center text-muted-foreground mb-4">
-                  Find inspiring travel videos, then generate a 3-day itinerary.
+                  Find inspiring travel videos, then generate a 3-day itinerary, or use live voice interaction.
                 </p>
                 <Form {...videoSearchForm}>
                   <form
@@ -572,6 +573,9 @@ export default function Home() {
                 </Form>
               </CardContent>
             </Card>
+            <div className="mt-8 flex justify-center">
+                <LiveCameraView />
+            </div>
           </TabsContent>
         </Tabs>
 
