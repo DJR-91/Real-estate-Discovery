@@ -1,13 +1,8 @@
 
 const VolMeterWorklet = `
 class VolMeter extends AudioWorkletProcessor {
-  // Class field declarations have been removed for better compatibility.
-  // Properties will be initialized directly on 'this' in the constructor.
-
-
   constructor() {
     super();
-    // FIX: Initialize properties directly inside the constructor.
     this.volume = 0;
     this.updateIntervalInMS = 25;
     this.nextUpdateFrame = this.updateIntervalInMS;
@@ -22,7 +17,6 @@ class VolMeter extends AudioWorkletProcessor {
 
 
   get intervalInFrames() {
-    // sampleRate is a global variable available in the AudioWorkletProcessor scope.
     return (this.updateIntervalInMS / 1000) * sampleRate;
   }
 

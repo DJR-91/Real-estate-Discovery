@@ -4,7 +4,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
 import { cn } from '@/lib/utils';
-import { Mic, Send, Video, MessageSquare, Power } from 'lucide-react';
+import { Mic, Send, Video, MessageSquare, Power, Radio } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
@@ -67,7 +67,7 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
 }
 
 export function LiveCameraView() {
- const { connected, stream, connect, disconnect, send, text: responseText, isListening } = useLiveAPIContext();
+ const { connected, stream, connect, disconnect, send, text: responseText, isListening, startAudioTurn, stopAudioTurn } = useLiveAPIContext();
  const videoRef = useRef<HTMLVideoElement>(null);
  const [inputText, setInputText] = useState('');
  const [isTextEntryVisible, setIsTextEntryVisible] = useState(false);
@@ -97,20 +97,19 @@ export function LiveCameraView() {
  const showVisualizer = stream && isListening;
 
  return (
-    <div className="flex items-end gap-4">
+    <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
         <div className={cn(
-        "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300",
-        connected ? (showVisualizer ? 'w-auto' : 'w-auto') : 'w-auto'
+        "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300"
         )}>
             <div 
                 className="relative w-24 h-24 flex-shrink-0 group cursor-pointer"
-                onClick={toggleConnection}
+                onClick={!connected ? connect : undefined}
             >
                 <div 
                     className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-primary transition-colors"
                 >
                     {isListening ? (
-                        <Mic className="text-destructive animate-pulse" size={32} />
+                        <Radio className="text-destructive animate-pulse" size={32} />
                     ) : connected && stream ? (
                     <video
                         ref={videoRef}
@@ -123,22 +122,34 @@ export function LiveCameraView() {
                     <Mic className="text-muted-foreground" size={32} />
                     )}
                 </div>
+                 {!connected && (
+                    <div className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                       <p className="text-white text-xs font-bold">Connect</p>
+                    </div>
+                )}
             </div>
 
-            <div className="flex flex-col items-start gap-1 px-4">
+            <div className="flex flex-col items-start gap-1 pr-4">
               {connected ? (
-                <>
-                  <div className='flex gap-2 items-center'>
-                    <Button onClick={disconnect} variant="outline" size="sm">
-                        <Power className="mr-2 h-4 w-4" />
-                        Disconnect
+                <div className="flex gap-2">
+                    <Button 
+                        onMouseDown={startAudioTurn}
+                        onMouseUp={stopAudioTurn}
+                        onTouchStart={startAudioTurn}
+                        onTouchEnd={stopAudioTurn}
+                        variant="outline" size="sm"
+                    >
+                        <Mic className="mr-2 h-4 w-4" />
+                        Push to Talk
                     </Button>
-                  </div>
-                </>
+                    <Button onClick={disconnect} variant="destructive" size="icon">
+                        <Power className="h-4 w-4" />
+                    </Button>
+                </div>
               ) : (
                 <div className="text-center">
                     <p className="font-bold">Start Live View</p>
-                    <p className="text-xs text-muted-foreground">Click the icon to begin</p>
+                    <p className="text-xs text-muted-foreground">Click icon to begin</p>
                 </div>
               )}
             </div>
@@ -148,7 +159,7 @@ export function LiveCameraView() {
             </div>
         </div>
         {connected && (
-            <div className="flex flex-col gap-2 w-96">
+            <div className="flex flex-col gap-2 w-full sm:w-96">
                 <Button 
                     size="sm" 
                     variant="outline"
