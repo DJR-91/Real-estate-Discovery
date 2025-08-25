@@ -10,7 +10,6 @@ import { useLiveStore } from '@/store/live-store';
 
 export function useLiveAPI() {
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
 
   // Get state and actions from the Zustand store
   const {
@@ -30,6 +29,7 @@ export function useLiveAPI() {
     startTour,
     setTourIndex,
     reset,
+    ...rest
   } = useLiveStore();
 
   const getTourPrompt = useCallback((index: number, data: ItineraryData): string | null => {
@@ -212,10 +212,5 @@ export function useLiveAPI() {
     }
   }, [streamFromStore, isListening, setVolume]);
 
-  useEffect(() => {
-    if (!isInitialized) {
-        useLiveStore.setState({ connect, disconnect, send });
-        setIsInitialized(true);
-    }
-  }, [isInitialized, connect, disconnect, send]);
+  return { ...rest, connect, disconnect, send };
 }

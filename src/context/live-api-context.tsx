@@ -4,23 +4,38 @@
 import React, { createContext, useContext } from 'react';
 import { useLiveAPI } from '@/hooks/use-live-api';
 import { useLiveStore } from '@/store/live-store';
+import type { LiveSession, Part } from '@google/genai';
+import type { ItineraryData } from '@/app/page';
 
-// Create a context to hold the store's state and actions, though we won't pass it directly.
-const LiveAPIContext = createContext(null);
+type LiveAPIContextType = {
+    connect: (data?: ItineraryData) => Promise<void>;
+    disconnect: () => void;
+    send: (parts: Part | Part[]) => void;
+    connected: boolean;
+    stream: MediaStream | null;
+    error: string | null;
+    text: string;
+    isListening: boolean;
+    isSpeaking: boolean;
+    volume: number;
+};
+
+const LiveAPIContext = createContext<LiveAPIContextType | null>(null);
 
 export function LiveAPIProvider({ children }: { children: React.ReactNode }) {
-  // Initialize the hook. It will manage its own state via the Zustand store.
-  useLiveAPI();
+  const api = useLiveAPI();
 
   return (
-    <LiveAPIContext.Provider value={null}>
+    <LiveAPIContext.Provider value={api}>
       {children}
     </LiveAPIContext.Provider>
   );
 }
 
-// Custom hook to access the Zustand store.
-// This is now the primary way components should interact with the live state.
 export function useLiveAPIContext() {
-  return useLiveStore();
+    const context = useContext(LiveAPIContext);
+    if (!context) {
+        throw new Error('useLiveAPIContext must be used within a LiveAPIProvider');
+    }
+    return context;
 }
