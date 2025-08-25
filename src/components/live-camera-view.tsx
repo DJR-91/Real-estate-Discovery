@@ -5,7 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
 import { cn } from '@/lib/utils';
-import { Mic, Send, Video, MessageSquare } from 'lucide-react';
+import { Mic, Send, Video, MessageSquare, Power } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
@@ -84,22 +84,7 @@ export function LiveCameraView() {
    if (stream && videoRef.current) {
      videoRef.current.srcObject = stream;
    }
- }, [stream, connected]);
-
-
-  const handleMicPress = () => {
-    if (!connected) {
-      connect();
-    } else {
-        startAudioTurn();
-    }
-  };
-
-  const handleMicRelease = () => {
-    if (connected) {
-        stopAudioTurn();
-    }
-  };
+ }, [stream]);
  
   const handleSendText = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,21 +99,18 @@ export function LiveCameraView() {
 
 
  return (
-    <div className="absolute bottom-6 left-6 z-50 flex items-end gap-4">
+    <div className="flex items-end gap-4">
         <div className={cn(
         "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300",
-        showVisualizer ? "w-64" : "w-24"
+        // Adjust width based on connection and visualizer state
+        connected ? (showVisualizer ? 'w-[450px]' : 'w-[300px]') : 'w-auto px-4'
         )}>
-            <div className="relative group w-24 h-24 flex-shrink-0">
+            <div className="relative w-24 h-24 flex-shrink-0 group">
                 <div 
-                    className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center cursor-pointer border-2 border-transparent"
-                    onMouseDown={handleMicPress}
-                    onMouseUp={handleMicRelease}
-                    onTouchStart={handleMicPress}
-                    onTouchEnd={handleMicRelease}
+                    className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-transparent"
                 >
                     {isListening ? (
-                        <Mic className="text-destructive" size={32} />
+                        <Mic className="text-destructive animate-pulse" size={32} />
                     ) : connected && stream ? (
                     <video
                         ref={videoRef}
@@ -141,19 +123,37 @@ export function LiveCameraView() {
                     <Mic className="text-muted-foreground" size={32} />
                     )}
                 </div>
-                {connected && (
-                    <div className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                            size="icon"
-                            variant={'destructive'}
-                            onClick={disconnect}
-                            className="rounded-full"
-                        >
-                            <Video size={20} />
-                        </Button>
-                    </div>
-                )}
+                 <div
+                    className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    onMouseDown={() => !connected ? connect() : startAudioTurn()}
+                    onMouseUp={stopAudioTurn}
+                    onTouchStart={() => !connected ? connect() : startAudioTurn()}
+                    onTouchEnd={stopAudioTurn}
+                >
+                    {!connected && <Video size={20} className="text-white" />}
+                </div>
             </div>
+
+            <div className="flex items-center gap-2 px-4">
+              {connected && (
+                <>
+                  <Button
+                    onMouseDown={startAudioTurn}
+                    onMouseUp={stopAudioTurn}
+                    onTouchStart={startAudioTurn}
+                    onTouchEnd={stopAudioTurn}
+                    className={cn("w-32", isListening && "bg-destructive hover:bg-destructive/90")}
+                  >
+                    <Mic className="mr-2 h-4 w-4" />
+                    {isListening ? 'Listening...' : 'Push to Talk'}
+                  </Button>
+                  <Button onClick={disconnect} variant="outline" size="icon" className="rounded-full">
+                      <Power className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+            </div>
+
             <div className="w-40 flex-shrink-0">
                 {showVisualizer && <VoiceVisualizer stream={stream} />}
             </div>

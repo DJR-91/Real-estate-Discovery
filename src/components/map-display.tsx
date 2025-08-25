@@ -12,6 +12,7 @@ import '@/hooks/map-3d-types';
 import type { GenerateItineraryOutput } from '@/ai/schemas/itinerary-schema';
 import { RoutesApi } from '@/services/routes-api';
 import { LiveCameraView } from './live-camera-view';
+import { Separator } from './ui/separator';
 
 // The new reusable Map3D component logic, adapted from your provided code
 export type { Map3DCameraProps };
@@ -262,11 +263,15 @@ export default function MapDisplay({ data, itinerary }: { data: MapData, itinera
               style={{ height: '500px', width: '100%', borderRadius: '0.5rem' }}
               defaultUIDisabled={true}
             />
-            <LiveCameraView />
         </div>
         <div className="md:col-span-1">
             {data.place && <PlaceCard place={data.place} />}
         </div>
+      </div>
+      <Separator />
+      <div className="p-6">
+        <h3 className="text-xl font-headline text-primary mb-4">Live Interaction</h3>
+        <LiveCameraView />
       </div>
     </div>
   );
