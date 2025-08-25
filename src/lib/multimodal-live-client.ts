@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-import {Content, Part} from '@google/generative-ai';
+import {Content, GenerativeContentBlob, Part} from '@google/generative-ai';
 import {EventEmitter} from 'eventemitter3';
 import {
   ClientContentMessage,
