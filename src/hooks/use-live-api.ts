@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -13,54 +14,64 @@ export interface UseLiveAPIResults {
   connected: boolean;
   text: string;
   error: string | null;
-  config: LiveConnectConfig;
-  setConfig: (config: LiveConnectConfig) => void;
-  model: string;
-  setModel: (model: string) => void;
-  voice: VoiceKey;
-  setVoice: (voice: VoiceKey) => void;
+  isListening: boolean;
+  isSpeaking: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
-  volume: number;
+  startListening: () => void;
+  stopListening: () => void;
   send: (parts: Part | Part[]) => void;
   stream: MediaStream | null;
-  isListening: boolean;
-  startAudioTurn: () => void;
-  stopAudioTurn: () => void;
 }
 
 export function useLiveAPI(): UseLiveAPIResults {
   const sessionRef = useRef<LiveSession | null>(null);
-  const audioStreamerRef = useRef<AudioStreamer | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const inputAudioContextRef = useRef<AudioContext | null>(null);
+  const outputAudioStreamerRef = useRef<AudioStreamer | null>(null);
+
   const [connected, setConnected] = useState(false);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [volume, setVolume] = useState(0);
-  const [model, setModel] = useState('gemini-live-2.5-flash-preview');
-  const [voice, setVoice] = useState<VoiceKey>(defaultVoice);
-  const [config, setConfig] = useState<LiveConnectConfig>({});
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
+  const stopAudioPlayback = useCallback(() => {
+    outputAudioStreamerRef.current?.stop();
+    setIsSpeaking(false);
+  }, []);
+  
   const disconnect = useCallback(() => {
     if (sessionRef.current) {
       sessionRef.current.close();
       sessionRef.current = null;
     }
-    if (audioStreamerRef.current) {
-      audioStreamerRef.current.stop();
+    
+    stopListening();
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
     }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+
+    if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
+        inputAudioContextRef.current.close();
+        inputAudioContextRef.current = null;
     }
+    
+    stopAudioPlayback();
+    if(outputAudioStreamerRef.current) {
+        outputAudioStreamerRef.current = null;
+    }
+
     setStream(null);
     setConnected(false);
     setText('');
     setError(null);
-    setIsListening(false);
-  }, []);
+  }, [stopAudioPlayback]);
 
   const connect = useCallback(async () => {
     if (sessionRef.current) {
@@ -69,62 +80,28 @@ export function useLiveAPI(): UseLiveAPIResults {
     setError(null);
     setText('');
 
-    let mediaStream: MediaStream | null = null;
-
-    if (!audioStreamerRef.current) {
-      try {
-        const audioCtx = await audioContext({ id: "audio-out" });
-        const streamer = new AudioStreamer(audioCtx);
-        
-        const workletHandler = (ev: MessageEvent) => {
-          if (ev.data && typeof ev.data.volume !== 'undefined') {
-            setVolume(ev.data.volume);
-          }
-        };
-        await streamer.addWorklet("vumeter-out", VolMeterWorklet, workletHandler);
-
-        audioStreamerRef.current = streamer;
-      } catch (e) {
-        console.error("Failed to initialize audio context or streamer:", e);
-        setError("Could not initialize audio. Please check permissions.");
-        return;
-      }
-    }
-
-    if (audioStreamerRef.current && audioStreamerRef.current.context.state === 'suspended') {
-      await audioStreamerRef.current.resume();
-    }
-
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) {
-      const errorMessage = "API key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in your .env file.";
-      console.error(errorMessage);
-      setError(errorMessage);
+      setError("API key is not configured.");
       return;
     }
 
     try {
-      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      setStream(mediaStream);
-      streamRef.current = mediaStream;
+      if (!outputAudioStreamerRef.current) {
+        const audioCtx = await audioContext({ id: "audio-out", config: { sampleRate: 24000 } });
+        outputAudioStreamerRef.current = new AudioStreamer(audioCtx);
+      }
 
       const genAI = new GoogleGenAI({ apiKey });
       const newSession = await genAI.live.connect({
-        model,
+        model: 'gemini-live-2.5-flash-preview',
         config: {
           audio: {input: {encoding: 'LINEAR16', sampleRateHertz: 16000}, output: {encoding: 'LINEAR16', sampleRateHertz: 24000}},
           video: {input: {encoding: 'H264'}},
-          text: {},
-          voice: { ttsVoice: voice },
         },
-        stream: mediaStream,
         callbacks: {
-          onopen: () => {
-            setConnected(true);
-          },
-          onclose: () => {
-            disconnect();
-          },
+          onopen: () => setConnected(true),
+          onclose: () => disconnect(),
           onerror: (e) => {
             console.error('Live API Error:', e);
             setError('An error occurred with the live connection.');
@@ -133,33 +110,24 @@ export function useLiveAPI(): UseLiveAPIResults {
           onmessage: (message) => {
             if (message.serverContent) {
               if ('interrupted' in message.serverContent) {
-                audioStreamerRef.current?.stop();
+                stopAudioPlayback();
                 setText('');
-                return;
-              }
-              if ('turnComplete' in message.serverContent) {
-                // If we are in an "always on" listening state, we might want to start the next turn here.
-                // For push-to-talk, we just stop listening.
-                setIsListening(false);
-                return;
-              }
-              if ('modelTurn' in message.serverContent) {
-                setIsListening(false);
+              } else if ('modelTurn' in message.serverContent) {
+                setIsSpeaking(true);
                 const parts = message.serverContent.modelTurn?.parts || [];
                 parts.forEach(part => {
                   if ('text' in part) {
                     setText(prev => prev + part.text);
                   } else if (part.inlineData && part.inlineData.mimeType?.startsWith("audio/")) {
                     const audioData = base64ToArrayBuffer(part.inlineData.data);
-                    audioStreamerRef.current?.addPCM16(new Uint8Array(audioData));
+                    outputAudioStreamerRef.current?.addPCM16(new Uint8Array(audioData));
                   }
                 });
+              } else if ('turnComplete' in message.serverContent) {
+                setIsSpeaking(false);
               }
-            } else if (message.clientContent) {
-                const hasText = message.clientContent.turns?.some(t => 'text' in t && t.text);
-                if (hasText) {
-                  setText('');
-                }
+            } else if (message.clientContent?.turns?.some(t => 'text' in t && t.text)) {
+              setText('');
             }
           },
         },
@@ -170,7 +138,7 @@ export function useLiveAPI(): UseLiveAPIResults {
       setError(e.message || 'Failed to initialize the API client.');
       disconnect();
     }
-  }, [model, voice, disconnect]);
+  }, [disconnect, stopAudioPlayback]);
 
   const send = useCallback((parts: Part | Part[]) => {
     if (sessionRef.current) {
@@ -178,39 +146,92 @@ export function useLiveAPI(): UseLiveAPIResults {
     }
   }, []);
 
-  const startAudioTurn = useCallback(() => {
-    if (sessionRef.current && connected && !isListening) {
-      setText(''); // Clear previous text
-      setIsListening(true);
-      sessionRef.current.sendClientContent({ turns: [], turnComplete: false });
-    }
-  }, [connected, isListening]);
+  const startListening = useCallback(async () => {
+    if (isListening || !connected) return;
+    
+    try {
+        if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
+            inputAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({sampleRate: 16000});
+        }
+        await inputAudioContextRef.current.resume();
 
-  const stopAudioTurn = useCallback(() => {
-    if (sessionRef.current && connected && isListening) {
-      setIsListening(false);
-      sessionRef.current.sendClientContent({ turns: [], turnComplete: true });
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        mediaStreamRef.current = mediaStream;
+        setStream(mediaStream);
+
+        const sourceNode = inputAudioContextRef.current.createMediaStreamSource(mediaStream);
+        const scriptProcessorNode = inputAudioContextRef.current.createScriptProcessor(256, 1, 1);
+
+        scriptProcessorNode.onaudioprocess = (event) => {
+            if (!isListening) return;
+            const pcmData = event.inputBuffer.getChannelData(0);
+            sessionRef.current?.sendRealtimeInput({ media: { data: pcmData, mimeType: 'audio/pcm' } });
+        };
+
+        sourceNode.connect(scriptProcessorNode);
+        scriptProcessorNode.connect(inputAudioContextRef.current.destination);
+        
+        sourceNodeRef.current = sourceNode;
+        scriptProcessorNodeRef.current = scriptProcessorNode;
+
+        setIsListening(true);
+        setText('');
+
+    } catch (e) {
+        console.error("Failed to start listening:", e);
+        setError("Could not get microphone access.");
     }
-  }, [connected, isListening]);
+  }, [isListening, connected]);
+
+  const stopListening = useCallback(() => {
+    if (!isListening) return;
+
+    setIsListening(false);
+    
+    if (scriptProcessorNodeRef.current) {
+        scriptProcessorNodeRef.current.disconnect();
+        scriptProcessorNodeRef.current.onaudioprocess = null;
+        scriptProcessorNodeRef.current = null;
+    }
+    if (sourceNodeRef.current) {
+        sourceNodeRef.current.disconnect();
+        sourceNodeRef.current = null;
+    }
+    if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+        setStream(null);
+    }
+  }, [isListening]);
+  
+  useEffect(() => {
+    // This effect ensures isListening is correctly updated when stopListening is called
+    if (scriptProcessorNodeRef.current) {
+        scriptProcessorNodeRef.current.onaudioprocess = (event) => {
+            if (!isListening) return;
+            const pcmData = event.inputBuffer.getChannelData(0);
+            const int16 = new Int16Array(pcmData.length);
+            for (let i = 0; i < pcmData.length; i++) {
+                int16[i] = pcmData[i] * 32768;
+            }
+            sessionRef.current?.sendRealtimeInput({ media: { data: new Uint8Array(int16.buffer), mimeType: 'audio/pcm' } });
+        };
+    }
+  }, [isListening]);
+
 
   return { 
     session: sessionRef.current,
     connected, 
     text,
     error, 
-    config, 
-    setConfig, 
     connect, 
     disconnect, 
-    volume,
-    model,
-    setModel,
-    voice,
-    setVoice,
     send,
     stream,
     isListening,
-    startAudioTurn,
-    stopAudioTurn,
+    startListening,
+    stopListening,
+    isSpeaking,
   };
 }
