@@ -10,12 +10,9 @@ export interface UseLiveAPIResults {
   connected: boolean;
   text: string;
   error: string | null;
-  isListening: boolean;
   isSpeaking: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
-  startListening: () => void;
-  stopListening: () => void;
   send: (parts: Part | Part[]) => void;
   stream: MediaStream | null;
 }
@@ -29,7 +26,6 @@ export function useLiveAPI(): UseLiveAPIResults {
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
   const disconnect = useCallback(() => {
@@ -48,7 +44,6 @@ export function useLiveAPI(): UseLiveAPIResults {
     setConnected(false);
     setText('');
     setError(null);
-    setIsListening(false);
     setIsSpeaking(false);
   }, []);
 
@@ -63,6 +58,12 @@ export function useLiveAPI(): UseLiveAPIResults {
       source.buffer = audioBuffer;
       source.connect(audioContextRef.current.destination);
       source.start();
+      source.onended = () => {
+        // Check if this was the last buffer to signal speaking has stopped
+        // This is a simplified check; a more robust solution would manage a queue.
+        setIsSpeaking(false);
+      }
+
     } catch(e) {
       console.error("Error decoding or playing audio:", e);
       setError("Failed to play audio response.");
@@ -71,6 +72,7 @@ export function useLiveAPI(): UseLiveAPIResults {
 
   const connect = useCallback(async () => {
     if (sessionRef.current) {
+      disconnect();
       return;
     }
     setError(null);
@@ -83,6 +85,10 @@ export function useLiveAPI(): UseLiveAPIResults {
     }
 
     try {
+      const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      setStream(userMediaStream);
+      mediaStreamRef.current = userMediaStream;
+
       const genAI = new GoogleGenAI({ apiKey });
       const newSession = await genAI.live.connect({
         model: 'gemini-live-2.5-flash-preview',
@@ -91,6 +97,7 @@ export function useLiveAPI(): UseLiveAPIResults {
           video: {input: {encoding: 'H264'}},
           text: {},
         },
+        stream: userMediaStream,
         callbacks: {
           onopen: () => setConnected(true),
           onclose: () => disconnect(),
@@ -104,18 +111,20 @@ export function useLiveAPI(): UseLiveAPIResults {
               if ('interrupted' in message.serverContent) {
                 setText('');
               } else if ('modelTurn' in message.serverContent) {
-                setIsSpeaking(true);
                 const parts = message.serverContent.modelTurn?.parts || [];
+                let hasAudio = false;
                 parts.forEach(part => {
                   if ('text' in part) {
                     setText(prev => prev + part.text);
                   } else if (part.inlineData?.mimeType?.startsWith("audio/")) {
+                    hasAudio = true;
                     const audioData = base64ToArrayBuffer(part.inlineData.data);
                     playAudio(audioData);
                   }
                 });
-              } else if ('turnComplete' in message.serverContent) {
-                setIsSpeaking(false);
+                if (hasAudio) {
+                    setIsSpeaking(true);
+                }
               }
             } else if (message.clientContent?.turns?.some(t => 'text' in t && t.text)) {
               setText('');
@@ -131,41 +140,10 @@ export function useLiveAPI(): UseLiveAPIResults {
     }
   }, [disconnect, playAudio]);
 
-  const startListening = useCallback(async () => {
-    if (!sessionRef.current || !connected) {
-      setError("Not connected to the API.");
-      return;
-    }
-    if (isListening) return;
-
-    try {
-        setText('');
-        const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        mediaStreamRef.current = userMediaStream;
-        setStream(userMediaStream);
-
-        sessionRef.current.sendClientContent({stream: userMediaStream});
-        setIsListening(true);
-    } catch (e) {
-      console.error("Microphone/camera access denied:", e);
-      setError("Please allow microphone and camera access.");
-    }
-  }, [connected, isListening]);
-
-  const stopListening = useCallback(() => {
-    if (sessionRef.current && connected && isListening) {
-        sessionRef.current.sendClientContent({ turns: [], turnComplete: true });
-        
-        mediaStreamRef.current?.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
-        setStream(null);
-        setIsListening(false);
-    }
-  }, [connected, isListening]);
-
   const send = useCallback((parts: Part | Part[]) => {
     if (sessionRef.current) {
-      sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: Array.isArray(parts) ? parts : [parts] }] });
+        setText(''); // Clear previous text on new input
+        sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: Array.isArray(parts) ? parts : [parts] }] });
     }
   }, []);
 
@@ -178,9 +156,6 @@ export function useLiveAPI(): UseLiveAPIResults {
     disconnect, 
     send,
     stream,
-    isListening,
-    startListening,
-    stopListening,
     isSpeaking,
   };
 }
