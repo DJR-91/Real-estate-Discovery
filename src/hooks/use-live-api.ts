@@ -7,6 +7,8 @@ import { AudioStreamer } from '@/lib/audio-streamer';
 import { audioContext } from '@/lib/utils';
 import { base64ToArrayBuffer } from '@/lib/utils';
 
+// You might need to adjust the export based on the file you just provided.
+// I'm assuming it should be this for now.
 export interface UseLiveAPIResults {
   session: LiveSession | null;
   connected: boolean;
@@ -16,6 +18,7 @@ export interface UseLiveAPIResults {
   isSpeaking: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
+  // Renamed for clarity: these functions now control turns, not the stream.
   startListening: () => void;
   stopListening: () => void;
   send: (parts: Part | Part[]) => void;
@@ -25,10 +28,7 @@ export interface UseLiveAPIResults {
 export function useLiveAPI(): UseLiveAPIResults {
   const sessionRef = useRef<LiveSession | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const scriptProcessorNodeRef = useRef<ScriptProcessorNode | null>(null);
-  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const inputAudioContextRef = useRef<AudioContext | null>(null);
-  const outputAudioStreamerRef = useRef<AudioStreamer | null>(null);
+  const audioStreamerRef = useRef<AudioStreamer | null>(null);
 
   const [connected, setConnected] = useState(false);
   const [text, setText] = useState('');
@@ -36,56 +36,24 @@ export function useLiveAPI(): UseLiveAPIResults {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-
-  const stopAudioPlayback = useCallback(() => {
-    outputAudioStreamerRef.current?.stop();
-    setIsSpeaking(false);
-  }, []);
   
-  const stopListening = useCallback(() => {
-    if (!isListening) return;
-
-    setIsListening(false);
-    
-    if (scriptProcessorNodeRef.current) {
-        scriptProcessorNodeRef.current.disconnect();
-        scriptProcessorNodeRef.current.onaudioprocess = null;
-        scriptProcessorNodeRef.current = null;
-    }
-    if (sourceNodeRef.current) {
-        sourceNodeRef.current.disconnect();
-        sourceNodeRef.current = null;
-    }
-    if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
-        setStream(null);
-    }
-  }, [isListening]);
-
   const disconnect = useCallback(() => {
     if (sessionRef.current) {
       sessionRef.current.close();
       sessionRef.current = null;
     }
-    
-    stopListening();
-
-    if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
-        inputAudioContextRef.current.close();
-        inputAudioContextRef.current = null;
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
     }
-    
-    stopAudioPlayback();
-    if(outputAudioStreamerRef.current) {
-        outputAudioStreamerRef.current = null;
-    }
-
+    audioStreamerRef.current?.stop();
     setStream(null);
     setConnected(false);
     setText('');
     setError(null);
-  }, [stopListening, stopAudioPlayback]);
+    setIsListening(false);
+    setIsSpeaking(false);
+  }, []);
 
   const connect = useCallback(async () => {
     if (sessionRef.current) {
@@ -101,12 +69,25 @@ export function useLiveAPI(): UseLiveAPIResults {
     }
 
     try {
-      if (!outputAudioStreamerRef.current) {
+      // Initialize the audio output streamer.
+      if (!audioStreamerRef.current) {
         const audioCtx = await audioContext({ id: "audio-out", config: { sampleRate: 24000 } });
-        outputAudioStreamerRef.current = new AudioStreamer(audioCtx);
+        audioStreamerRef.current = new AudioStreamer(audioCtx);
       }
+      // Resume the audio context in case it was suspended.
+      if (audioStreamerRef.current.context.state === 'suspended') {
+        await audioStreamerRef.current.resume();
+      }
+      
+      // Get the microphone and camera stream from the user.
+      const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      mediaStreamRef.current = userMediaStream;
+      setStream(userMediaStream);
 
       const genAI = new GoogleGenAI({ apiKey });
+      
+      // Provide the stream directly to the connect method.
+      // The library will handle all the necessary audio encoding and processing.
       const newSession = await genAI.live.connect({
         model: 'gemini-live-2.5-flash-preview',
         config: {
@@ -114,18 +95,20 @@ export function useLiveAPI(): UseLiveAPIResults {
           video: {input: {encoding: 'H264'}},
           text: {},
         },
+        // Pass the stream here.
+        stream: userMediaStream,
         callbacks: {
           onopen: () => setConnected(true),
           onclose: () => disconnect(),
           onerror: (e) => {
             console.error('Live API Error:', e);
-            setError('An error occurred with the live connection.');
+            setError('An error with the live connection occurred.');
             disconnect();
           },
           onmessage: (message) => {
             if (message.serverContent) {
               if ('interrupted' in message.serverContent) {
-                stopAudioPlayback();
+                audioStreamerRef.current?.stop();
                 setText('');
               } else if ('modelTurn' in message.serverContent) {
                 setIsSpeaking(true);
@@ -133,9 +116,9 @@ export function useLiveAPI(): UseLiveAPIResults {
                 parts.forEach(part => {
                   if ('text' in part) {
                     setText(prev => prev + part.text);
-                  } else if (part.inlineData && part.inlineData.mimeType?.startsWith("audio/")) {
+                  } else if (part.inlineData?.mimeType?.startsWith("audio/")) {
                     const audioData = base64ToArrayBuffer(part.inlineData.data);
-                    outputAudioStreamerRef.current?.addPCM16(new Uint8Array(audioData));
+                    audioStreamerRef.current?.addPCM16(new Uint8Array(audioData));
                   }
                 });
               } else if ('turnComplete' in message.serverContent) {
@@ -153,62 +136,31 @@ export function useLiveAPI(): UseLiveAPIResults {
       setError(e.message || 'Failed to initialize the API client.');
       disconnect();
     }
-  }, [disconnect, stopAudioPlayback]);
+  }, [disconnect]);
 
   const send = useCallback((parts: Part | Part[]) => {
     if (sessionRef.current) {
-      sessionRef.current.sendClientContent({ turns: Array.isArray(parts) ? parts : [parts] });
+      // Correctly format the data as a Content object.
+      sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: Array.isArray(parts) ? parts : [parts] }] });
     }
   }, []);
 
-  const startListening = useCallback(async () => {
-    if (isListening || !connected) return;
-    
-    try {
-        if (!inputAudioContextRef.current || inputAudioContextRef.current.state === 'closed') {
-            inputAudioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({sampleRate: 16000});
-        }
-        await inputAudioContextRef.current.resume();
-
-        const mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        mediaStreamRef.current = mediaStream;
-        setStream(mediaStream);
-
-        const sourceNode = inputAudioContextRef.current.createMediaStreamSource(mediaStream);
-        const scriptProcessorNode = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
-
-        scriptProcessorNode.onaudioprocess = (event) => {
-            if (!isListening) return;
-            const pcmData = event.inputBuffer.getChannelData(0);
-            sessionRef.current?.sendRealtimeInput({ media: { data: pcmData, mimeType: 'audio/pcm' } });
-        };
-
-        sourceNode.connect(scriptProcessorNode);
-        scriptProcessorNode.connect(inputAudioContextRef.current.destination);
-        
-        sourceNodeRef.current = sourceNode;
-        scriptProcessorNodeRef.current = scriptProcessorNode;
-
-        setIsListening(true);
-        setText('');
-
-    } catch (e) {
-        console.error("Failed to start listening:", e);
-        setError("Could not get microphone access.");
+  const startListening = useCallback(() => {
+    if (sessionRef.current && connected && !isListening) {
+      setText('');
+      setIsListening(true);
+      // Correctly send a message to start the user's turn without being 'complete'.
+      sessionRef.current.sendClientContent({ turns: [], turnComplete: false });
     }
-  }, [isListening, connected]);
+  }, [connected, isListening]);
 
-  useEffect(() => {
-    // This effect ensures isListening is correctly updated when stopListening is called
-    if (scriptProcessorNodeRef.current) {
-        scriptProcessorNodeRef.current.onaudioprocess = (event) => {
-            if (!isListening) return;
-            const pcmData = event.inputBuffer.getChannelData(0);
-            sessionRef.current?.sendRealtimeInput({ media: { data: pcmData, mimeType: 'audio/pcm' } });
-        };
+  const stopListening = useCallback(() => {
+    if (sessionRef.current && connected && isListening) {
+      setIsListening(false);
+      // Correctly send a message to mark the user's turn as 'complete'.
+      sessionRef.current.sendClientContent({ turns: [], turnComplete: true });
     }
-  }, [isListening]);
-
+  }, [connected, isListening]);
 
   return { 
     session: sessionRef.current,
