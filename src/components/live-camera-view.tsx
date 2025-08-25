@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
-import { Mic, Power, Video } from 'lucide-react';
+import { Mic, MicOff, Power, Video } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -17,6 +17,14 @@ export function LiveCameraView() {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
+
+  const handleConnect = () => {
+    if (!connected) {
+      connect();
+    } else {
+      disconnect();
+    }
+  }
 
   return (
     <Card className="shadow-lg w-full max-w-4xl mx-auto">
@@ -33,7 +41,7 @@ export function LiveCameraView() {
                   muted
                 />
               ) : (
-                <Mic className="text-muted-foreground" size={48} />
+                <Video className="text-muted-foreground" size={48} />
               )}
             </div>
             {isListening && (
@@ -55,7 +63,7 @@ export function LiveCameraView() {
               <div>
                 <p className="font-bold text-lg">Start Live Interaction</p>
                 <p className="text-sm text-muted-foreground">Click the button to connect to Gemini.</p>
-                <Button onClick={connect} className="mt-2">
+                <Button onClick={handleConnect} className="mt-2">
                   <Video className="mr-2" />
                   Connect
                 </Button>
@@ -69,7 +77,7 @@ export function LiveCameraView() {
                     </Button>
                    ) : (
                     <Button onClick={stopListening} variant="destructive">
-                      <Mic className="mr-2" /> Stop Listening
+                      <MicOff className="mr-2" /> Stop Listening
                     </Button>
                    )}
                   <Button onClick={disconnect} variant="outline" size="icon">
