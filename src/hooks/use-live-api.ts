@@ -5,9 +5,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveSession, LiveConnectConfig, Part } from '@google/genai';
 import { AudioStreamer } from '@/lib/audio-streamer';
 import { audioContext } from '@/lib/utils';
-import VolMeterWorklet from '@/lib/worklets/vol-meter';
 import { base64ToArrayBuffer } from '@/lib/utils';
-import { defaultVoice, VoiceKey } from '@/lib/config/voice-mapping';
 
 export interface UseLiveAPIResults {
   session: LiveSession | null;
@@ -44,6 +42,27 @@ export function useLiveAPI(): UseLiveAPIResults {
     setIsSpeaking(false);
   }, []);
   
+  const stopListening = useCallback(() => {
+    if (!isListening) return;
+
+    setIsListening(false);
+    
+    if (scriptProcessorNodeRef.current) {
+        scriptProcessorNodeRef.current.disconnect();
+        scriptProcessorNodeRef.current.onaudioprocess = null;
+        scriptProcessorNodeRef.current = null;
+    }
+    if (sourceNodeRef.current) {
+        sourceNodeRef.current.disconnect();
+        sourceNodeRef.current = null;
+    }
+    if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        mediaStreamRef.current = null;
+        setStream(null);
+    }
+  }, [isListening]);
+
   const disconnect = useCallback(() => {
     if (sessionRef.current) {
       sessionRef.current.close();
@@ -51,11 +70,6 @@ export function useLiveAPI(): UseLiveAPIResults {
     }
     
     stopListening();
-
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
-      mediaStreamRef.current = null;
-    }
 
     if (inputAudioContextRef.current && inputAudioContextRef.current.state !== 'closed') {
         inputAudioContextRef.current.close();
@@ -71,7 +85,7 @@ export function useLiveAPI(): UseLiveAPIResults {
     setConnected(false);
     setText('');
     setError(null);
-  }, [stopAudioPlayback]);
+  }, [stopListening, stopAudioPlayback]);
 
   const connect = useCallback(async () => {
     if (sessionRef.current) {
@@ -80,7 +94,7 @@ export function useLiveAPI(): UseLiveAPIResults {
     setError(null);
     setText('');
 
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
     if (!apiKey) {
       setError("API key is not configured.");
       return;
@@ -98,6 +112,7 @@ export function useLiveAPI(): UseLiveAPIResults {
         config: {
           audio: {input: {encoding: 'LINEAR16', sampleRateHertz: 16000}, output: {encoding: 'LINEAR16', sampleRateHertz: 24000}},
           video: {input: {encoding: 'H264'}},
+          text: {},
         },
         callbacks: {
           onopen: () => setConnected(true),
@@ -160,7 +175,7 @@ export function useLiveAPI(): UseLiveAPIResults {
         setStream(mediaStream);
 
         const sourceNode = inputAudioContextRef.current.createMediaStreamSource(mediaStream);
-        const scriptProcessorNode = inputAudioContextRef.current.createScriptProcessor(256, 1, 1);
+        const scriptProcessorNode = inputAudioContextRef.current.createScriptProcessor(4096, 1, 1);
 
         scriptProcessorNode.onaudioprocess = (event) => {
             if (!isListening) return;
@@ -183,38 +198,13 @@ export function useLiveAPI(): UseLiveAPIResults {
     }
   }, [isListening, connected]);
 
-  const stopListening = useCallback(() => {
-    if (!isListening) return;
-
-    setIsListening(false);
-    
-    if (scriptProcessorNodeRef.current) {
-        scriptProcessorNodeRef.current.disconnect();
-        scriptProcessorNodeRef.current.onaudioprocess = null;
-        scriptProcessorNodeRef.current = null;
-    }
-    if (sourceNodeRef.current) {
-        sourceNodeRef.current.disconnect();
-        sourceNodeRef.current = null;
-    }
-    if (mediaStreamRef.current) {
-        mediaStreamRef.current.getTracks().forEach(track => track.stop());
-        mediaStreamRef.current = null;
-        setStream(null);
-    }
-  }, [isListening]);
-  
   useEffect(() => {
     // This effect ensures isListening is correctly updated when stopListening is called
     if (scriptProcessorNodeRef.current) {
         scriptProcessorNodeRef.current.onaudioprocess = (event) => {
             if (!isListening) return;
             const pcmData = event.inputBuffer.getChannelData(0);
-            const int16 = new Int16Array(pcmData.length);
-            for (let i = 0; i < pcmData.length; i++) {
-                int16[i] = pcmData[i] * 32768;
-            }
-            sessionRef.current?.sendRealtimeInput({ media: { data: new Uint8Array(int16.buffer), mimeType: 'audio/pcm' } });
+            sessionRef.current?.sendRealtimeInput({ media: { data: pcmData, mimeType: 'audio/pcm' } });
         };
     }
   }, [isListening]);
