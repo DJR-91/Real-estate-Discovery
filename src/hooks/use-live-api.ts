@@ -145,7 +145,6 @@ export function useLiveAPI(): UseLiveAPIResults {
         setStream(userMediaStream);
 
         sessionRef.current.sendClientContent({stream: userMediaStream});
-        sessionRef.current.sendClientContent({ turns: [], turnComplete: false });
         setIsListening(true);
     } catch (e) {
       console.error("Microphone/camera access denied:", e);
