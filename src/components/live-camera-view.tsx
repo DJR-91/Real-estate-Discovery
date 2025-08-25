@@ -1,5 +1,4 @@
 
-
 'use client';
 
 
@@ -197,4 +196,3 @@ export function LiveCameraView() {
    </div>
  );
 }
-

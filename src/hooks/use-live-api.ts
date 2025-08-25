@@ -97,7 +97,7 @@ export function useLiveAPI(): UseLiveAPIResults {
 
  const connect = useCallback(async () => {
    if (sessionRef.current) {
-     disconnect();
+     return;
    }
    setError(null);
    setText('');
