@@ -101,3 +101,8 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
     }
     return bytes.buffer;
 }
+
+export async function blobToJSON(blob: globalThis.Blob): Promise<any> {
+    const text = await blob.text();
+    return JSON.parse(text);
+}
