@@ -516,7 +516,7 @@ export default function Home() {
             <Card className="w-full shadow-lg max-w-4xl mx-auto">
               <CardContent className="p-6">
                 <p className="text-center text-muted-foreground mb-4">
-                  Find inspiring travel videos, then generate a 3-day itinerary, or use live voice interaction.
+                  Find inspiring travel videos, then generate a 3-day itinerary.
                 </p>
                 <Form {...videoSearchForm}>
                   <form
@@ -573,9 +573,6 @@ export default function Home() {
                 </Form>
               </CardContent>
             </Card>
-            <div className="mt-8 flex justify-center">
-                <LiveCameraView />
-            </div>
           </TabsContent>
         </Tabs>
 
@@ -626,8 +623,11 @@ export default function Home() {
           ) : null}
           
           {mapData && !isItineraryLoading && (
-            <div className="pt-8">
+            <div className="pt-8 space-y-8">
               <MapDisplay data={mapData} itinerary={itineraryResponse?.itinerary} />
+              <div className="flex justify-center">
+                  <LiveCameraView />
+              </div>
             </div>
           )}
 
