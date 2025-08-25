@@ -39,7 +39,7 @@ import type { GenerateItineraryOutput } from "@/ai/schemas/itinerary-schema";
 import type { GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
 import { ResultsDisplay } from "@/components/results-display";
 import { LoadingState } from "@/components/loading-state";
-import { Search, Youtube } from "lucide-react";
+import { Search, Youtube, Sparkles, Loader } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoResultDisplay } from "@/components/video-result-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
@@ -499,8 +499,12 @@ export default function Home() {
                       )}
                     />
                     <Button type="submit" disabled={isLoading} size="lg">
-                      <Search className="mr-2 h-5 w-5" />
-                      Search
+                      {isLoading ? (
+                        <Loader className="mr-2 h-5 w-5 animate-spin" />
+                      ) : (
+                        <Sparkles className="mr-2 h-5 w-5" />
+                      )}
+                      AI Mode
                     </Button>
                   </form>
                 </Form>
