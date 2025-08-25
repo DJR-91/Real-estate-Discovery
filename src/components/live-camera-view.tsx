@@ -1,35 +1,22 @@
 
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
-import { cn } from '@/lib/utils';
-import { Mic, Send, Video, Power, MessageSquare } from 'lucide-react';
+import { Mic, Power, Video } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 export function LiveCameraView() {
-  const { connected, stream, text, error, isListening, connect, disconnect, startListening, stopListening, isSpeaking } = useLiveAPIContext();
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [showTextInput, setShowTextInput] = useState(false);
-  const [inputText, setInputText] = useState('');
+  const { connected, stream, text, error, isListening, isSpeaking, connect, disconnect, startListening, stopListening } = useLiveAPIContext();
+  const videoRef = React.useRef<HTMLVideoElement>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (stream && videoRef.current) {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
-
-  const handleSendText = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputText.trim() && connected) {
-      // Assuming a `send` function exists in your hook
-      // send({ text: inputText }); 
-      setInputText('');
-    }
-  };
 
   return (
     <Card className="shadow-lg w-full max-w-4xl mx-auto">
@@ -67,7 +54,7 @@ export function LiveCameraView() {
             {!connected ? (
               <div>
                 <p className="font-bold text-lg">Start Live Interaction</p>
-                <p className="text-sm text-muted-foreground">Click the button to connect to Gemini and enable your camera and microphone.</p>
+                <p className="text-sm text-muted-foreground">Click the button to connect to Gemini.</p>
                 <Button onClick={connect} className="mt-2">
                   <Video className="mr-2" />
                   Connect
@@ -88,9 +75,6 @@ export function LiveCameraView() {
                   <Button onClick={disconnect} variant="outline" size="icon">
                     <Power className="h-5 w-5" />
                   </Button>
-                   <Button onClick={() => setShowTextInput(!showTextInput)} variant="outline" size="icon">
-                    <MessageSquare className="h-5 w-5" />
-                  </Button>
                 </div>
                  {text && (
                     <Card className="bg-muted/80 backdrop-blur-sm border-primary/20 p-4 text-left">
@@ -98,19 +82,6 @@ export function LiveCameraView() {
                             <p className="text-sm">{text}</p>
                         </CardContent>
                     </Card>
-                )}
-                {showTextInput && (
-                    <form onSubmit={handleSendText} className="flex gap-2">
-                        <Input 
-                            value={inputText}
-                            onChange={(e) => setInputText(e.target.value)}
-                            placeholder="Type a message..."
-                            className="bg-muted/80 backdrop-blur-sm border-primary/20"
-                        />
-                        <Button type="submit" size="icon" disabled={!inputText.trim()}>
-                            <Send />
-                        </Button>
-                    </form>
                 )}
               </div>
             )}

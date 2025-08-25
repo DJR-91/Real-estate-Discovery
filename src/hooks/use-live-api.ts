@@ -1,14 +1,10 @@
 
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { GoogleGenAI, LiveSession, LiveConnectConfig, Part } from '@google/genai';
-import { AudioStreamer } from '@/lib/audio-streamer';
-import { audioContext } from '@/lib/utils';
-import { base64ToArrayBuffer } from '@/lib/utils';
+import { useState, useCallback, useRef } from 'react';
+import { GoogleGenAI, LiveSession, Part } from '@google/genai';
+import { audioContext, base64ToArrayBuffer } from '@/lib/utils';
 
-// You might need to adjust the export based on the file you just provided.
-// I'm assuming it should be this for now.
 export interface UseLiveAPIResults {
   session: LiveSession | null;
   connected: boolean;
@@ -18,7 +14,6 @@ export interface UseLiveAPIResults {
   isSpeaking: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
-  // Renamed for clarity: these functions now control turns, not the stream.
   startListening: () => void;
   stopListening: () => void;
   send: (parts: Part | Part[]) => void;
@@ -28,8 +23,9 @@ export interface UseLiveAPIResults {
 export function useLiveAPI(): UseLiveAPIResults {
   const sessionRef = useRef<LiveSession | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioStreamerRef = useRef<AudioStreamer | null>(null);
-
+  const audioQueueRef = useRef<ArrayBuffer[]>([]);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  
   const [connected, setConnected] = useState(false);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -38,21 +34,40 @@ export function useLiveAPI(): UseLiveAPIResults {
   const [isSpeaking, setIsSpeaking] = useState(false);
   
   const disconnect = useCallback(() => {
-    if (sessionRef.current) {
-      sessionRef.current.close();
-      sessionRef.current = null;
-    }
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
-      mediaStreamRef.current = null;
-    }
-    audioStreamerRef.current?.stop();
+    sessionRef.current?.close();
+    sessionRef.current = null;
+    
+    mediaStreamRef.current?.getTracks().forEach(track => track.stop());
+    mediaStreamRef.current = null;
+    
+    audioContextRef.current?.close();
+    audioContextRef.current = null;
+    
+    audioQueueRef.current = [];
+
     setStream(null);
     setConnected(false);
     setText('');
     setError(null);
     setIsListening(false);
     setIsSpeaking(false);
+  }, []);
+
+  const playAudio = useCallback(async (audioData: ArrayBuffer) => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = await audioContext({id: 'audio-out', config: {sampleRate: 24000}});
+    }
+    
+    try {
+      const audioBuffer = await audioContextRef.current.decodeAudioData(audioData);
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContextRef.current.destination);
+      source.start();
+    } catch(e) {
+      console.error("Error decoding or playing audio:", e);
+      setError("Failed to play audio response.");
+    }
   }, []);
 
   const connect = useCallback(async () => {
@@ -69,25 +84,7 @@ export function useLiveAPI(): UseLiveAPIResults {
     }
 
     try {
-      // Initialize the audio output streamer.
-      if (!audioStreamerRef.current) {
-        const audioCtx = await audioContext({ id: "audio-out", config: { sampleRate: 24000 } });
-        audioStreamerRef.current = new AudioStreamer(audioCtx);
-      }
-      // Resume the audio context in case it was suspended.
-      if (audioStreamerRef.current.context.state === 'suspended') {
-        await audioStreamerRef.current.resume();
-      }
-      
-      // Get the microphone and camera stream from the user.
-      const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      mediaStreamRef.current = userMediaStream;
-      setStream(userMediaStream);
-
       const genAI = new GoogleGenAI({ apiKey });
-      
-      // Provide the stream directly to the connect method.
-      // The library will handle all the necessary audio encoding and processing.
       const newSession = await genAI.live.connect({
         model: 'gemini-live-2.5-flash-preview',
         config: {
@@ -95,8 +92,6 @@ export function useLiveAPI(): UseLiveAPIResults {
           video: {input: {encoding: 'H264'}},
           text: {},
         },
-        // Pass the stream here.
-        stream: userMediaStream,
         callbacks: {
           onopen: () => setConnected(true),
           onclose: () => disconnect(),
@@ -108,7 +103,7 @@ export function useLiveAPI(): UseLiveAPIResults {
           onmessage: (message) => {
             if (message.serverContent) {
               if ('interrupted' in message.serverContent) {
-                audioStreamerRef.current?.stop();
+                audioQueueRef.current = [];
                 setText('');
               } else if ('modelTurn' in message.serverContent) {
                 setIsSpeaking(true);
@@ -118,7 +113,7 @@ export function useLiveAPI(): UseLiveAPIResults {
                     setText(prev => prev + part.text);
                   } else if (part.inlineData?.mimeType?.startsWith("audio/")) {
                     const audioData = base64ToArrayBuffer(part.inlineData.data);
-                    audioStreamerRef.current?.addPCM16(new Uint8Array(audioData));
+                    playAudio(audioData);
                   }
                 });
               } else if ('turnComplete' in message.serverContent) {
@@ -136,31 +131,42 @@ export function useLiveAPI(): UseLiveAPIResults {
       setError(e.message || 'Failed to initialize the API client.');
       disconnect();
     }
-  }, [disconnect]);
+  }, [disconnect, playAudio]);
 
-  const send = useCallback((parts: Part | Part[]) => {
-    if (sessionRef.current) {
-      // Correctly format the data as a Content object.
-      sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: Array.isArray(parts) ? parts : [parts] }] });
+  const startListening = useCallback(async () => {
+    if (!sessionRef.current || !connected) {
+      setError("Not connected to the API.");
+      return;
     }
-  }, []);
 
-  const startListening = useCallback(() => {
-    if (sessionRef.current && connected && !isListening) {
-      setText('');
+    try {
+      if (!mediaStreamRef.current) {
+        const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        mediaStreamRef.current = userMediaStream;
+        setStream(userMediaStream);
+        sessionRef.current.sendClientContent({stream: userMediaStream});
+      }
       setIsListening(true);
-      // Correctly send a message to start the user's turn without being 'complete'.
+      setText('');
       sessionRef.current.sendClientContent({ turns: [], turnComplete: false });
+    } catch (e) {
+      console.error("Microphone/camera access denied:", e);
+      setError("Please allow microphone and camera access.");
     }
-  }, [connected, isListening]);
+  }, [connected]);
 
   const stopListening = useCallback(() => {
     if (sessionRef.current && connected && isListening) {
       setIsListening(false);
-      // Correctly send a message to mark the user's turn as 'complete'.
       sessionRef.current.sendClientContent({ turns: [], turnComplete: true });
     }
   }, [connected, isListening]);
+
+  const send = useCallback((parts: Part | Part[]) => {
+    if (sessionRef.current) {
+      sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: Array.isArray(parts) ? parts : [parts] }] });
+    }
+  }, []);
 
   return { 
     session: sessionRef.current,
