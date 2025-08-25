@@ -76,15 +76,18 @@ export function useLiveAPI(): UseLiveAPIResults {
       const nextIndex = tourIndex + 1;
       if (tourData) {
         const prompt = getTourPrompt(nextIndex, tourData);
-        if (prompt) {
+        if (prompt && sessionRef.current) {
           setTourIndex(nextIndex);
           setText(''); // Clear previous response
-          send([{ text: prompt }]);
+          // Send the prompt directly to the session to avoid recursion
+          sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: [{ text: prompt }] }] });
         }
       }
     } else {
         // If it's not a "next" command, just send the text as a normal query.
-        send([{ text: command }]);
+        if (sessionRef.current) {
+          sessionRef.current.sendClientContent({ turns: [{ role: 'user', parts: [{ text: command }] }] });
+        }
     }
   };
 
@@ -188,7 +191,7 @@ export function useLiveAPI(): UseLiveAPIResults {
       setError(e.message || 'Failed to initialize the API client.');
       disconnect();
     }
-  }, [disconnect, isListening, tourIndex, tourData]);
+  }, [disconnect, isListening]);
 
 
   const send = useCallback((parts: Part | Part[]) => {
