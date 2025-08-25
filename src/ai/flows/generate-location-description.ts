@@ -4,19 +4,13 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {
+    GenerateLocationDescriptionInputSchema,
+    GenerateLocationDescriptionOutputSchema,
+    type GenerateLocationDescriptionInput,
+    type GenerateLocationDescriptionOutput
+} from '@/ai/schemas/location-description-schema';
 
-export const GenerateLocationDescriptionInputSchema = z.object({
-  locationName: z.string().describe('The name of the location (e.g., "Eiffel Tower, Paris").'),
-  latitude: z.number(),
-  longitude: z.number(),
-});
-export type GenerateLocationDescriptionInput = z.infer<typeof GenerateLocationDescriptionInputSchema>;
-
-export const GenerateLocationDescriptionOutputSchema = z.object({
-  description: z.string().describe('A rich, engaging paragraph describing the location.'),
-});
-export type GenerateLocationDescriptionOutput = z.infer<typeof GenerateLocationDescriptionOutputSchema>;
 
 export async function generateLocationDescription(
   input: GenerateLocationDescriptionInput
@@ -39,7 +33,7 @@ const generateLocationDescriptionFlow = ai.defineFlow(
       output: { schema: GenerateLocationDescriptionOutputSchema },
     });
 
-    const output = result.output();
+    const output = result.output;
     if (!output) {
       throw new Error('Failed to generate a location description.');
     }

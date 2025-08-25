@@ -1,12 +1,13 @@
 
 'use client';
 
-import { useCallback, useRef, useEffect, useState } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveSession, Part } from '@google/genai';
 import { AudioStreamer } from '@/lib/audio-streamer';
 import { audioContext, base64ToArrayBuffer } from '@/lib/utils';
 import type { ItineraryData } from '@/app/page';
 import { useLiveStore } from '@/store/live-store';
+import { generateLocationDescription } from '@/ai/flows/generate-location-description';
 
 export function useLiveAPI() {
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
@@ -32,24 +33,39 @@ export function useLiveAPI() {
     ...rest
   } = useLiveStore();
 
-  const getTourPrompt = useCallback((index: number, data: ItineraryData): string | null => {
+  const getTourPrompt = useCallback(async (index: number, data: ItineraryData): Promise<string | null> => {
     const allLocations = data.itinerary.flatMap(day => day.locations);
+    
     if (index >= allLocations.length) {
       return "That's the end of the itinerary! Would you like me to find hotels or trendy events for this destination?";
     }
+    
     const location = allLocations[index];
-    if (index === 0) {
-      return `Let's start the tour of your itinerary for ${data.destination}. The first stop is ${location.name}. Here's a little about it: ${location.description}. Let me know when you're ready for the next stop.`;
+    
+    try {
+        const { description } = await generateLocationDescription({ locationName: `${location.name}, ${data.destination}` });
+        
+        if (index === 0) {
+            return `Let's start the tour of your itinerary for ${data.destination}. Our first stop is ${location.name}. ${description}. Let me know when you're ready for the next stop.`;
+        }
+        return `Next up is ${location.name}. ${description}. What's next on your mind?`;
+
+    } catch (e) {
+        console.error("Failed to generate location description:", e);
+        // Fallback to the original description if the flow fails
+        if (index === 0) {
+            return `Let's start the tour of your itinerary for ${data.destination}. The first stop is ${location.name}. Here's a little about it: ${location.description}. Let me know when you're ready for the next stop.`;
+        }
+        return `Next up is ${location.name}. ${location.description}. What's next on your mind?`;
     }
-    return `Next up is ${location.name}. ${location.description}. What's next on your mind?`;
   }, []);
 
-  const processUserCommand = useCallback((command: string) => {
+  const processUserCommand = useCallback(async (command: string) => {
     const lowerCaseCommand = command.toLowerCase();
     if (lowerCaseCommand.includes('next') || lowerCaseCommand.includes('continue')) {
       const nextIndex = tourIndex + 1;
       if (itineraryData) {
-        const prompt = getTourPrompt(nextIndex, itineraryData);
+        const prompt = await getTourPrompt(nextIndex, itineraryData);
         if (prompt && session) {
           setTourIndex(nextIndex);
           setText(''); // Clear previous response
@@ -104,7 +120,7 @@ export function useLiveAPI() {
       let initialPrompt: Part[] | undefined = undefined;
       if (data) {
         startTour(data);
-        const promptText = getTourPrompt(0, data);
+        const promptText = await getTourPrompt(0, data);
         if (promptText) {
           initialPrompt = [{ text: promptText }];
         }
