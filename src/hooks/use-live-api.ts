@@ -16,6 +16,7 @@ export function useLiveAPI() {
   const {
     session,
     micActive,
+    cameraActive,
     isSpeaking,
     itineraryData,
     tourIndex,
@@ -119,6 +120,9 @@ export function useLiveAPI() {
       userMediaStream.getAudioTracks().forEach(track => {
         track.enabled = micActive;
       });
+      userMediaStream.getVideoTracks().forEach(track => {
+        track.enabled = cameraActive;
+      });
       setStream(userMediaStream);
       
       const genAI = new GoogleGenAI({ apiKey });
@@ -182,7 +186,7 @@ export function useLiveAPI() {
       setError(e.message || 'Failed to initialize the API client.');
       disconnect();
     }
-  }, [disconnect, micActive, session, appendText, getTourPrompt, setConnected, setError, setIsSpeaking, setSession, setStream, startTour, setText]);
+  }, [disconnect, micActive, cameraActive, session, appendText, getTourPrompt, setConnected, setError, setIsSpeaking, setSession, setStream, startTour, setText]);
 
   const send = useCallback((parts: Part | Part[]) => {
     if (!session) return;
@@ -207,6 +211,15 @@ export function useLiveAPI() {
         });
     }
   }, [micActive, streamFromStore]);
+
+    // Effect to enable/disable camera track based on `cameraActive` state
+  useEffect(() => {
+    if (streamFromStore) {
+        streamFromStore.getVideoTracks().forEach(track => {
+            track.enabled = cameraActive;
+        });
+    }
+  }, [cameraActive, streamFromStore]);
 
   // Effect for volume meter
   useEffect(() => {

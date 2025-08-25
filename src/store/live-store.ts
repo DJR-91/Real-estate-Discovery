@@ -19,6 +19,7 @@ interface LiveState {
   isSpeaking: boolean;
   volume: number;
   micActive: boolean;
+  cameraActive: boolean;
   
   // Tour-specific state
   itineraryData: ItineraryData | null;
@@ -39,6 +40,7 @@ interface LiveActions {
   setIsSpeaking: (isSpeaking: boolean) => void;
   setVolume: (volume: number) => void;
   toggleMic: () => void;
+  toggleCamera: () => void;
   
   // Tour actions
   startTour: (itineraryData: ItineraryData) => void;
@@ -58,6 +60,7 @@ const initialState: LiveState = {
   isSpeaking: false,
   volume: 0,
   micActive: true,
+  cameraActive: true,
   itineraryData: null,
   tourIndex: -1,
 };
@@ -77,6 +80,7 @@ export const useLiveStore = create<LiveState & LiveActions>()(
     setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
     setVolume: (volume) => set({ volume }),
     toggleMic: () => set((state) => { state.micActive = !state.micActive }),
+    toggleCamera: () => set((state) => { state.cameraActive = !state.cameraActive }),
     
     startTour: (itineraryData) => set({ itineraryData, tourIndex: 0, text: '' }),
     setTourIndex: (index) => set({ tourIndex: index }),

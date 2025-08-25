@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
-import { Mic, MicOff, Power, Video, Send, Loader } from 'lucide-react';
+import { Mic, MicOff, Power, Video, Send, Loader, VideoOff } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -18,7 +18,7 @@ interface LiveCameraViewProps {
 
 export function LiveCameraView({ itineraryData }: LiveCameraViewProps) {
   const { connect, disconnect, send } = useLiveAPIContext();
-  const { connected, text, error, isSpeaking, isListening, volume, micActive, toggleMic } = useLiveStore();
+  const { connected, text, error, isSpeaking, isListening, volume, micActive, toggleMic, cameraActive, toggleCamera } = useLiveStore();
   const [inputValue, setInputValue] = React.useState('');
 
   const handleConnect = () => {
@@ -110,6 +110,9 @@ export function LiveCameraView({ itineraryData }: LiveCameraViewProps) {
                    {getStatusIndicator()}
                   <Button onClick={toggleMic} variant="outline" size="icon" title={micActive ? "Mute Microphone" : "Unmute Microphone"}>
                     {micActive ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+                  </Button>
+                   <Button onClick={toggleCamera} variant="outline" size="icon" title={cameraActive ? "Turn Camera Off" : "Turn Camera On"}>
+                    {cameraActive ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
                   </Button>
                   <Button onClick={disconnect} variant="destructive" size="icon" title="Disconnect">
                     <Power className="h-5 w-5" />
