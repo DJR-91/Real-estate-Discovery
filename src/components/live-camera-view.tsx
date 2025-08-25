@@ -8,6 +8,7 @@ import { Mic, Send, Video, MessageSquare, Power, Radio } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
  const [volume, setVolume] = useState(0);
@@ -48,7 +49,7 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
   const showVisualizer = volume > 0.05;
 
  if (!showVisualizer) {
-   return null;
+   return <div className="h-10 w-40 p-2" />;
  }
   const bars = Array.from({ length: 64 }, () => Math.random() * 0.6 + 0.4);
  return (
@@ -67,10 +68,9 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
 }
 
 export function LiveCameraView() {
- const { connected, stream, connect, disconnect, send, text: responseText, isListening, startAudioTurn, stopAudioTurn } = useLiveAPIContext();
+ const { connected, stream, connect, disconnect, send, text: responseText, isListening, startAudioTurn, stopAudioTurn, error } = useLiveAPIContext();
  const videoRef = useRef<HTMLVideoElement>(null);
  const [inputText, setInputText] = useState('');
- const [isTextEntryVisible, setIsTextEntryVisible] = useState(false);
  
  useEffect(() => {
    if (stream && videoRef.current) {
@@ -86,113 +86,92 @@ export function LiveCameraView() {
     }
   };
 
-  const toggleConnection = () => {
-      if (connected) {
-          disconnect();
-      } else {
-          connect();
-      }
-  }
-
- const showVisualizer = stream && isListening;
-
  return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4">
-        <div className={cn(
-        "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300"
-        )}>
-            <div 
-                className="relative w-24 h-24 flex-shrink-0 group cursor-pointer"
-                onClick={!connected ? connect : undefined}
-            >
-                <div 
-                    className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-primary transition-colors"
-                >
-                    {isListening ? (
-                        <Radio className="text-destructive animate-pulse" size={32} />
-                    ) : connected && stream ? (
-                    <video
-                        ref={videoRef}
-                        className="w-full h-full object-cover scale-x-[-1]"
-                        autoPlay
-                        playsInline
-                        muted
-                    />
-                    ) : (
-                    <Mic className="text-muted-foreground" size={32} />
+    <Card className="shadow-lg max-w-4xl mx-auto">
+        <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                
+                <div className="flex-shrink-0 relative w-24 h-24">
+                    <div className="absolute inset-0 rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-primary/20">
+                        {connected && stream ? (
+                            <video
+                                ref={videoRef}
+                                className="w-full h-full object-cover scale-x-[-1]"
+                                autoPlay
+                                playsInline
+                                muted
+                            />
+                        ) : (
+                            <Mic className="text-muted-foreground" size={48} />
+                        )}
+                    </div>
+                     {isListening && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-destructive/20 rounded-full">
+                            <Radio className="text-destructive animate-pulse" size={32} />
+                        </div>
                     )}
                 </div>
-                 {!connected && (
-                    <div className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                       <p className="text-white text-xs font-bold">Connect</p>
-                    </div>
-                )}
-            </div>
 
-            <div className="flex flex-col items-start gap-1 pr-4">
-              {connected ? (
-                <div className="flex gap-2">
-                    <Button 
-                        onMouseDown={startAudioTurn}
-                        onMouseUp={stopAudioTurn}
-                        onTouchStart={startAudioTurn}
-                        onTouchEnd={stopAudioTurn}
-                        variant="outline" size="sm"
-                    >
-                        <Mic className="mr-2 h-4 w-4" />
-                        Push to Talk
-                    </Button>
-                    <Button onClick={disconnect} variant="destructive" size="icon">
-                        <Power className="h-4 w-4" />
-                    </Button>
-                </div>
-              ) : (
-                <div className="text-center">
-                    <p className="font-bold">Start Live View</p>
-                    <p className="text-xs text-muted-foreground">Click icon to begin</p>
-                </div>
-              )}
-            </div>
-
-            <div className="w-40 flex-shrink-0">
-                {showVisualizer && <VoiceVisualizer stream={stream} />}
-            </div>
-        </div>
-        {connected && (
-            <div className="flex flex-col gap-2 w-full sm:w-96">
-                <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => setIsTextEntryVisible(!isTextEntryVisible)}
-                    className="bg-muted/80 backdrop-blur-sm border-primary/20 hover:bg-muted"
-                >
-                    <MessageSquare className="mr-2" />
-                    {isTextEntryVisible ? 'Hide Text Input' : 'Show Text Input'}
-                </Button>
-                {isTextEntryVisible && (
-                    <div className="animate-in fade-in duration-300 space-y-2">
-                        {responseText && (
-                            <Card className="bg-muted/80 backdrop-blur-sm border-primary/20 p-4">
-                                <CardContent className="p-0">
-                                    <p className="text-sm">{responseText}</p>
-                                </CardContent>
-                            </Card>
-                        )}
-                        <form onSubmit={handleSendText} className="flex gap-2">
-                            <Input 
-                                value={inputText}
-                                onChange={(e) => setInputText(e.target.value)}
-                                placeholder="Type a message..."
-                                className="bg-muted/80 backdrop-blur-sm border-primary/20"
-                            />
-                            <Button type="submit" size="icon" disabled={!inputText.trim()}>
-                                <Send />
+                <div className="flex-grow w-full space-y-4">
+                    {!connected ? (
+                        <div className='text-center sm:text-left'>
+                            <p className="font-bold text-lg">Start Live Interaction</p>
+                            <p className="text-sm text-muted-foreground">Click the button to connect to Gemini and enable your camera and microphone.</p>
+                            <Button onClick={connect} className="mt-2">
+                                <Video className="mr-2" />
+                                Connect
                             </Button>
-                        </form>
-                    </div>
-                )}
+                        </div>
+                    ) : (
+                       <div className="flex flex-col gap-4">
+                            <div className="flex items-center justify-center sm:justify-start gap-2">
+                                <Button 
+                                    onMouseDown={startAudioTurn}
+                                    onMouseUp={stopAudioTurn}
+                                    onTouchStart={startAudioTurn}
+                                    onTouchEnd={stopAudioTurn}
+                                    variant={isListening ? "destructive" : "outline"}
+                                    className="w-40"
+                                >
+                                    <Mic className="mr-2 h-4 w-4" />
+                                    {isListening ? 'Listening...' : 'Push to Talk'}
+                                </Button>
+                                <Button onClick={disconnect} variant="ghost" size="icon">
+                                    <Power className="h-5 w-5" />
+                                </Button>
+                                <VoiceVisualizer stream={stream} />
+                            </div>
+                           
+                            {responseText && (
+                                <Card className="bg-muted/80 backdrop-blur-sm border-primary/20 p-4">
+                                    <CardContent className="p-0">
+                                        <p className="text-sm">{responseText}</p>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            <form onSubmit={handleSendText} className="flex gap-2">
+                                <Input 
+                                    value={inputText}
+                                    onChange={(e) => setInputText(e.target.value)}
+                                    placeholder="Type a message..."
+                                    className="bg-muted/80 backdrop-blur-sm border-primary/20"
+                                />
+                                <Button type="submit" size="icon" disabled={!inputText.trim()}>
+                                    <Send />
+                                </Button>
+                            </form>
+                       </div>
+                    )}
+                     {error && (
+                        <Alert variant="destructive" className="mt-4">
+                            <AlertTitle>Connection Error</AlertTitle>
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
+                </div>
             </div>
-        )}
-   </div>
+        </CardContent>
+    </Card>
  );
 }

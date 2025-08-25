@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
@@ -139,6 +138,8 @@ export function useLiveAPI(): UseLiveAPIResults {
                 return;
               }
               if ('turnComplete' in message.serverContent) {
+                // If we are in an "always on" listening state, we might want to start the next turn here.
+                // For push-to-talk, we just stop listening.
                 setIsListening(false);
                 return;
               }
@@ -178,19 +179,19 @@ export function useLiveAPI(): UseLiveAPIResults {
   }, []);
 
   const startAudioTurn = useCallback(() => {
-    if (sessionRef.current && connected) {
+    if (sessionRef.current && connected && !isListening) {
       setText(''); // Clear previous text
       setIsListening(true);
       sessionRef.current.sendClientContent({ turns: [], turnComplete: false });
     }
-  }, [connected]);
+  }, [connected, isListening]);
 
   const stopAudioTurn = useCallback(() => {
-    if (sessionRef.current && connected) {
+    if (sessionRef.current && connected && isListening) {
       setIsListening(false);
       sessionRef.current.sendClientContent({ turns: [], turnComplete: true });
     }
-  }, [connected]);
+  }, [connected, isListening]);
 
   return { 
     session: sessionRef.current,
