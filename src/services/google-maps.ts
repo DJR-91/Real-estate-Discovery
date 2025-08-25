@@ -12,13 +12,14 @@ const findPlaceToolSchema = z.object({
 export const findPlaceTool = ai.defineTool(
     {
       name: 'findPlace',
-      description: 'Finds a place and returns its address, photo, and rating.',
+      description: 'Finds a place and returns its address, photo, rating, and recent reviews.',
       inputSchema: findPlaceToolSchema,
       outputSchema: z.object({
         address: z.string().optional(),
         imageUrl: z.string().nullable().optional(),
         rating: z.number().nullable().optional(),
         userRatingCount: z.number().nullable().optional(),
+        reviews: z.array(z.string()).optional(),
       }),
     },
     async (input) => {
@@ -29,7 +30,7 @@ export const findPlaceTool = ai.defineTool(
           params: {
             input: query,
             inputtype: PlaceInputType.textQuery,
-            fields: ['place_id', 'formatted_address', 'name', 'photos', 'rating', 'user_ratings_total'],
+            fields: ['place_id'],
             key: process.env.GOOGLE_MAPS_API_KEY!,
           },
         });
@@ -39,23 +40,38 @@ export const findPlaceTool = ai.defineTool(
         if (!candidate || !candidate.place_id) {
           throw new Error(`No place found for query: "${query}"`);
         }
-  
-        let imageUrl = null;
-        if (candidate.photos && candidate.photos.length > 0) {
-          const photoReference = candidate.photos[0].photo_reference;
-          // The photo URL is constructed this way, as per Google Maps Places API docs.
-          imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_MAPS_API_KEY!}`;
+
+        const detailsResponse = await mapsClient.placeDetails({
+            params: {
+                place_id: candidate.place_id,
+                fields: ['formatted_address', 'name', 'photos', 'rating', 'user_ratings_total', 'reviews'],
+                key: process.env.GOOGLE_MAPS_API_KEY!,
+            }
+        });
+
+        const placeDetails = detailsResponse.data.result;
+
+        if (!placeDetails) {
+            throw new Error(`Could not retrieve details for place_id: ${candidate.place_id}`);
         }
   
+        let imageUrl = null;
+        if (placeDetails.photos && placeDetails.photos.length > 0) {
+          const photoReference = placeDetails.photos[0].photo_reference;
+          imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_MAPS_API_KEY!}`;
+        }
+
+        const reviews = placeDetails.reviews?.map(r => r.text).slice(0, 3) || []; // Get up to 3 reviews
+  
         return {
-          address: candidate.formatted_address,
+          address: placeDetails.formatted_address,
           imageUrl,
-          rating: candidate.rating ?? null,
-          userRatingCount: candidate.user_ratings_total ?? null,
+          rating: placeDetails.rating ?? null,
+          userRatingCount: placeDetails.user_ratings_total ?? null,
+          reviews: reviews,
         };
       } catch (error) {
         console.error(`Google Maps API error for query "${query}":`, error);
-        // Re-throw the error so it can be handled by the calling flow.
         throw new Error(`Failed to retrieve place details from Google Maps for: "${query}"`);
       }
     }
