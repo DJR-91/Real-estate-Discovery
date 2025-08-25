@@ -116,7 +116,7 @@ export function LiveCameraView() {
                 onTouchEnd={handleMicRelease}
             >
                 <div 
-                    className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-transparent"
+                    className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-transparent group-hover:border-primary transition-colors"
                 >
                     {isListening ? (
                         <Mic className="text-destructive animate-pulse" size={32} />
@@ -131,14 +131,6 @@ export function LiveCameraView() {
                     ) : (
                     <Mic className="text-muted-foreground" size={32} />
                     )}
-                </div>
-                 <div
-                    className={cn(
-                        "absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 transition-opacity",
-                        !connected && "group-hover:opacity-100"
-                    )}
-                >
-                    {!connected && <Video size={20} className="text-white" />}
                 </div>
             </div>
 
