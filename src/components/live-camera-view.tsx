@@ -95,7 +95,7 @@ export function LiveCameraView() {
   };
 
 
- const showVisualizer = stream && connected;
+ const showVisualizer = stream && isListening;
 
 
  return (
@@ -124,18 +124,15 @@ export function LiveCameraView() {
                     )}
                 </div>
                  <div
-                    className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    onMouseDown={() => !connected ? connect() : startAudioTurn()}
-                    onMouseUp={stopAudioTurn}
-                    onTouchStart={() => !connected ? connect() : startAudioTurn()}
-                    onTouchEnd={stopAudioTurn}
+                    className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    onClick={() => !connected && connect()}
                 >
                     {!connected && <Video size={20} className="text-white" />}
                 </div>
             </div>
 
             <div className="flex items-center gap-2 px-4">
-              {connected && (
+              {connected ? (
                 <>
                   <Button
                     onMouseDown={startAudioTurn}
@@ -151,6 +148,11 @@ export function LiveCameraView() {
                       <Power className="h-4 w-4" />
                   </Button>
                 </>
+              ) : (
+                <Button onClick={connect}>
+                    <Video className="mr-2 h-4 w-4" />
+                    Start Live View
+                </Button>
               )}
             </div>
 
