@@ -18,6 +18,7 @@ interface LiveState {
   isListening: boolean;
   isSpeaking: boolean;
   volume: number;
+  micActive: boolean;
   
   // Tour-specific state
   itineraryData: ItineraryData | null;
@@ -37,6 +38,7 @@ interface LiveActions {
   setIsListening: (isListening: boolean) => void;
   setIsSpeaking: (isSpeaking: boolean) => void;
   setVolume: (volume: number) => void;
+  toggleMic: () => void;
   
   // Tour actions
   startTour: (itineraryData: ItineraryData) => void;
@@ -55,6 +57,7 @@ const initialState: LiveState = {
   isListening: false,
   isSpeaking: false,
   volume: 0,
+  micActive: true,
   itineraryData: null,
   tourIndex: -1,
 };
@@ -73,11 +76,20 @@ export const useLiveStore = create<LiveState & LiveActions>()(
     setIsListening: (isListening) => set({ isListening }),
     setIsSpeaking: (isSpeaking) => set({ isSpeaking }),
     setVolume: (volume) => set({ volume }),
+    toggleMic: () => set((state) => { state.micActive = !state.micActive }),
     
     startTour: (itineraryData) => set({ itineraryData, tourIndex: 0, text: '' }),
     setTourIndex: (index) => set({ tourIndex: index }),
 
-    reset: () => set(initialState),
+    reset: () => {
+      set((state) => {
+        // Stop all tracks on the stream before resetting
+        if (state.stream) {
+          state.stream.getTracks().forEach(track => track.stop());
+        }
+        return initialState;
+      });
+    },
   }))
 );
 

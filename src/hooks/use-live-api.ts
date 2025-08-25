@@ -15,7 +15,8 @@ export function useLiveAPI() {
   // Get state and actions from the Zustand store
   const {
     session,
-    isListening,
+    micActive,
+    isSpeaking,
     itineraryData,
     tourIndex,
     setSession,
@@ -30,8 +31,9 @@ export function useLiveAPI() {
     startTour,
     setTourIndex,
     reset,
-    ...rest
   } = useLiveStore();
+  
+  const isListening = micActive && !isSpeaking;
 
   const getTourPrompt = useCallback(async (index: number, data: ItineraryData): Promise<string | null> => {
     const allLocations = data.itinerary.flatMap(day => day.locations);
@@ -104,7 +106,6 @@ export function useLiveAPI() {
         streamer.onStart = () => setIsSpeaking(true);
         streamer.onComplete = () => {
           setIsSpeaking(false);
-          if (!isListening) setIsListening(true);
         };
         audioStreamerRef.current = streamer;
       }
@@ -113,6 +114,11 @@ export function useLiveAPI() {
       }
 
       const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      
+      // Initially set the microphone track to be active based on the store's state
+      userMediaStream.getAudioTracks().forEach(track => {
+        track.enabled = micActive;
+      });
       setStream(userMediaStream);
       
       const genAI = new GoogleGenAI({ apiKey });
@@ -138,7 +144,6 @@ export function useLiveAPI() {
         callbacks: {
           onopen: () => {
             setConnected(true);
-            setIsListening(true);
           },
           onclose: () => disconnect(),
           onerror: (e) => {
@@ -152,7 +157,6 @@ export function useLiveAPI() {
                 audioStreamerRef.current?.stop();
                 setText('');
               } else if ('modelTurn' in message.serverContent) {
-                setIsListening(false);
                 const parts = message.serverContent.modelTurn?.parts || [];
                 let currentText = '';
                 parts.forEach(part => {
@@ -164,9 +168,7 @@ export function useLiveAPI() {
                   }
                 });
                 appendText(currentText);
-              } else if ('turnComplete' in message.serverContent) {
-                if (!isListening) setIsListening(true);
-              }
+              } 
             } else if (message.clientContent?.turns?.some(t => 'text' in t && t.text)) {
               setText('');
             }
@@ -180,12 +182,11 @@ export function useLiveAPI() {
       setError(e.message || 'Failed to initialize the API client.');
       disconnect();
     }
-  }, [disconnect, isListening, session, appendText, getTourPrompt, setConnected, setError, setIsListening, setIsSpeaking, setSession, setStream, startTour, setText]);
+  }, [disconnect, micActive, session, appendText, getTourPrompt, setConnected, setError, setIsSpeaking, setSession, setStream, startTour, setText]);
 
   const send = useCallback((parts: Part | Part[]) => {
     if (!session) return;
     
-    setIsListening(false);
     const commandPart = Array.isArray(parts) ? parts.find(p => 'text' in p) : ('text' in parts ? parts : undefined);
     
     if (itineraryData && commandPart && 'text' in commandPart && commandPart.text) {
@@ -194,9 +195,20 @@ export function useLiveAPI() {
     }
 
     session.sendClientContent({ turns: [{ role: 'user', parts: Array.isArray(parts) ? parts : [parts] }] });
-  }, [session, itineraryData, processUserCommand, setIsListening]);
+  }, [session, itineraryData, processUserCommand]);
   
   const streamFromStore = useLiveStore((state) => state.stream);
+
+  // Effect to enable/disable mic track based on `micActive` state
+  useEffect(() => {
+    if (streamFromStore) {
+        streamFromStore.getAudioTracks().forEach(track => {
+            track.enabled = micActive;
+        });
+    }
+  }, [micActive, streamFromStore]);
+
+  // Effect for volume meter
   useEffect(() => {
     if (streamFromStore && isListening) {
       const audioContext = new AudioContext();
@@ -227,6 +239,11 @@ export function useLiveAPI() {
       setVolume(0);
     }
   }, [streamFromStore, isListening, setVolume]);
+  
+  // Update the global isListening state based on mic and speaking status
+  useEffect(() => {
+    setIsListening(isListening);
+  }, [isListening, setIsListening]);
 
-  return { ...rest, connect, disconnect, send };
+  return { connect, disconnect, send };
 }

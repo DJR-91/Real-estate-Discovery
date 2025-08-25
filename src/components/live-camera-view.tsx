@@ -10,13 +10,15 @@ import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Input } from './ui/input';
 import { LiveVideoDisplay } from './live-video-display';
 import type { ItineraryData } from '@/app/page';
+import { useLiveStore } from '@/store/live-store';
 
 interface LiveCameraViewProps {
     itineraryData: ItineraryData;
 }
 
 export function LiveCameraView({ itineraryData }: LiveCameraViewProps) {
-  const { connected, text, error, isSpeaking, isListening, volume, connect, disconnect, send } = useLiveAPIContext();
+  const { connect, disconnect, send } = useLiveAPIContext();
+  const { connected, text, error, isSpeaking, isListening, volume, micActive, toggleMic } = useLiveStore();
   const [inputValue, setInputValue] = React.useState('');
 
   const handleConnect = () => {
@@ -106,6 +108,9 @@ export function LiveCameraView({ itineraryData }: LiveCameraViewProps) {
                 <div className="flex items-center justify-center sm:justify-start gap-4">
                    <p className="font-bold text-lg text-green-600">Connected</p>
                    {getStatusIndicator()}
+                  <Button onClick={toggleMic} variant="outline" size="icon" title={micActive ? "Mute Microphone" : "Unmute Microphone"}>
+                    {micActive ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+                  </Button>
                   <Button onClick={disconnect} variant="destructive" size="icon" title="Disconnect">
                     <Power className="h-5 w-5" />
                   </Button>
