@@ -1,7 +1,6 @@
 
 'use client';
 
-
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveSession, LiveConnectConfig, Part } from '@google/genai';
 import { AudioStreamer } from '@/lib/audio-streamer';
@@ -9,7 +8,6 @@ import { audioContext } from '@/lib/utils';
 // import VolMeterWorklet from '@/lib/worklets/vol-meter'; // Temporarily disabled to resolve syntax error
 import { base64ToArrayBuffer } from '@/lib/utils';
 import { defaultVoice, VoiceKey } from '@/lib/config/voice-mapping';
-
 
 export interface UseLiveAPIResults {
  session: LiveSession | null;
@@ -32,11 +30,9 @@ export interface UseLiveAPIResults {
  stopAudioTurn: () => void;
 }
 
-
 export function useLiveAPI(): UseLiveAPIResults {
  const sessionRef = useRef<LiveSession | null>(null);
  const audioStreamerRef = useRef<AudioStreamer | null>(null);
- // FIX: Add a ref for the stream to prevent stale closures in callbacks.
  const streamRef = useRef<MediaStream | null>(null);
   const [connected, setConnected] = useState(false);
  const [text, setText] = useState('');
@@ -47,7 +43,6 @@ export function useLiveAPI(): UseLiveAPIResults {
  const [config, setConfig] = useState<LiveConnectConfig>({});
  const [stream, setStream] = useState<MediaStream | null>(null);
  const [isListening, setIsListening] = useState(false);
-
 
  const initializeAudio = useCallback(async () => {
    if (audioStreamerRef.current) {
@@ -61,13 +56,6 @@ export function useLiveAPI(): UseLiveAPIResults {
      console.log(`AudioContext created on user gesture. Initial state: ${audioCtx.state}`);
      const streamer = new AudioStreamer(audioCtx);
     
-     // --- FIX: Commenting out the problematic worklet initialization ---
-     // const workletHandler = (ev: MessageEvent) => {
-     //   if (ev.data && typeof ev.data.volume !== 'undefined') {
-     //     setVolume(ev.data.volume);
-     //   }
-     // };
-     // await streamer.addWorklet("vumeter-out", VolMeterWorklet, workletHandler);
      audioStreamerRef.current = streamer;
      return true;
    } catch (e) {
@@ -77,8 +65,6 @@ export function useLiveAPI(): UseLiveAPIResults {
    }
  }, []);
 
-
- // FIX: Make disconnect stable by using a ref for the stream.
  const disconnect = useCallback(() => {
    if (sessionRef.current) {
      sessionRef.current.close();
@@ -92,8 +78,7 @@ export function useLiveAPI(): UseLiveAPIResults {
    setConnected(false);
    setText('');
    setIsListening(false);
- }, []); // Now has no dependencies.
-
+ }, []);
 
  const connect = useCallback(async () => {
    if (sessionRef.current) {
@@ -102,29 +87,23 @@ export function useLiveAPI(): UseLiveAPIResults {
    setError(null);
    setText('');
 
-
    const isAudioReady = await initializeAudio();
    if (!isAudioReady) {
      return;
    }
 
-
    let mediaStream: MediaStream | null = null;
    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-
 
    if (!apiKey) {
      setError("API key is not configured.");
      return;
    }
 
-
    try {
      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-     // FIX: Update both the state and the ref for the stream.
      setStream(mediaStream);
      streamRef.current = mediaStream;
-
 
      const audioTrack = mediaStream.getAudioTracks()[0];
      if (audioTrack) {
@@ -134,7 +113,6 @@ export function useLiveAPI(): UseLiveAPIResults {
          readyState: audioTrack.readyState,
        });
      }
-
 
      const genAI = new GoogleGenAI({ apiKey });
      const newSession = await genAI.live.connect({
@@ -194,15 +172,13 @@ export function useLiveAPI(): UseLiveAPIResults {
        streamRef.current = null;
      }
    }
- }, [model, voice, initializeAudio, disconnect]); // FIX: Updated dependency array.
-
+ }, [model, voice, initializeAudio, disconnect]);
 
  const send = useCallback((parts: Part | Part[]) => {
    if (sessionRef.current) {
      sessionRef.current.sendClientContent({ turns: Array.isArray(parts) ? parts : [parts] });
    }
  }, []);
-
 
  const startAudioTurn = useCallback(() => {
    if (sessionRef.current && connected && !isListening) {
@@ -212,14 +188,12 @@ export function useLiveAPI(): UseLiveAPIResults {
    }
  }, [connected, isListening]);
 
-
  const stopAudioTurn = useCallback(() => {
    if (sessionRef.current && connected && isListening) {
      setIsListening(false);
      sessionRef.current.sendClientContent({ turns: [], turnComplete: true });
    }
  }, [connected, isListening]);
-
 
  return {
    session: sessionRef.current,

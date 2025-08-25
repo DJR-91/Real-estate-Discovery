@@ -1,7 +1,6 @@
 
 'use client';
 
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
 import { cn } from '@/lib/utils';
@@ -10,11 +9,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent } from './ui/card';
 
-
 function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
  const [volume, setVolume] = useState(0);
  const animationFrameRef = useRef<number>();
-
 
  useEffect(() => {
    if (stream) {
@@ -26,7 +23,6 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
      const bufferLength = analyser.frequencyBinCount;
      const dataArray = new Uint8Array(bufferLength);
 
-
      const getVolume = () => {
        analyser.getByteFrequencyData(dataArray);
        const average =
@@ -35,9 +31,7 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
        animationFrameRef.current = requestAnimationFrame(getVolume);
      };
 
-
      getVolume();
-
 
      return () => {
        if (animationFrameRef.current) {
@@ -52,7 +46,6 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
    }
  }, [stream]);
   const showVisualizer = volume > 0.05;
-
 
  if (!showVisualizer) {
    return null;
@@ -72,7 +65,6 @@ function VoiceVisualizer({ stream }: { stream: MediaStream | null }) {
    </div>
  );
 }
-
 
 export function LiveCameraView() {
  const { connected, stream, connect, disconnect, send, text: responseText, startAudioTurn, stopAudioTurn, isListening } = useLiveAPIContext();
@@ -94,18 +86,35 @@ export function LiveCameraView() {
     }
   };
 
+  const handleMicPress = () => {
+    if (!connected) {
+        connect();
+    } else {
+        startAudioTurn();
+    }
+  }
+
+  const handleMicRelease = () => {
+    if (isListening) {
+        stopAudioTurn();
+    }
+  }
 
  const showVisualizer = stream && isListening;
-
 
  return (
     <div className="flex items-end gap-4">
         <div className={cn(
         "flex items-center bg-muted/80 backdrop-blur-sm border border-primary/20 rounded-full h-24 shadow-lg transition-all duration-300",
-        // Adjust width based on connection and visualizer state
         connected ? (showVisualizer ? 'w-[450px]' : 'w-[300px]') : 'w-auto px-4'
         )}>
-            <div className="relative w-24 h-24 flex-shrink-0 group">
+            <div 
+                className="relative w-24 h-24 flex-shrink-0 group cursor-pointer"
+                onMouseDown={handleMicPress}
+                onMouseUp={handleMicRelease}
+                onTouchStart={handleMicPress}
+                onTouchEnd={handleMicRelease}
+            >
                 <div 
                     className="absolute inset-1.5 size-[84px] rounded-full bg-background overflow-hidden flex items-center justify-center border-2 border-transparent"
                 >
@@ -124,8 +133,10 @@ export function LiveCameraView() {
                     )}
                 </div>
                  <div
-                    className="absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    onClick={() => !connected && connect()}
+                    className={cn(
+                        "absolute inset-1.5 flex items-center justify-center bg-black/40 rounded-full opacity-0 transition-opacity",
+                        !connected && "group-hover:opacity-100"
+                    )}
                 >
                     {!connected && <Video size={20} className="text-white" />}
                 </div>
@@ -134,25 +145,24 @@ export function LiveCameraView() {
             <div className="flex items-center gap-2 px-4">
               {connected ? (
                 <>
-                  <Button
-                    onMouseDown={startAudioTurn}
-                    onMouseUp={stopAudioTurn}
-                    onTouchStart={startAudioTurn}
-                    onTouchEnd={stopAudioTurn}
-                    className={cn("w-32", isListening && "bg-destructive hover:bg-destructive/90")}
+                  <div
+                    className={cn(
+                        "flex items-center justify-center w-32 h-10 rounded-md text-sm font-medium", 
+                        isListening ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"
+                    )}
                   >
                     <Mic className="mr-2 h-4 w-4" />
                     {isListening ? 'Listening...' : 'Push to Talk'}
-                  </Button>
+                  </div>
                   <Button onClick={disconnect} variant="outline" size="icon" className="rounded-full">
                       <Power className="h-4 w-4" />
                   </Button>
                 </>
               ) : (
-                <Button onClick={connect}>
-                    <Video className="mr-2 h-4 w-4" />
-                    Start Live View
-                </Button>
+                <div className="text-center">
+                    <p className="font-bold">Start Live View</p>
+                    <p className="text-xs text-muted-foreground">Click the icon to begin</p>
+                </div>
               )}
             </div>
 
