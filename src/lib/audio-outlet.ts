@@ -4,7 +4,6 @@
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
-* You may not use this file except in compliance with the License.
 * You may obtain a copy of the License at
 *
 *     http://www.apache.org/licenses/LICENSE-2.0
@@ -16,7 +15,6 @@
 * limitations under the License.
 */
 
-
 /**
 * A registry to map attached worklets by their audio-context
 * any module using `audioContext.audioWorklet.addModule(` should register the worklet here
@@ -26,12 +24,10 @@ export type WorkletGraph = {
  handlers: Array<(this: MessagePort, ev: MessageEvent) => any>;
 };
 
-
 export const registeredWorklets: Map<
  AudioContext,
  Record<string, WorkletGraph>
 > = new Map();
-
 
 export const createWorketFromSrc = (
  workletName: string,
@@ -43,7 +39,6 @@ export const createWorketFromSrc = (
      type: "application/javascript",
    },
  );
-
 
  return URL.createObjectURL(script);
 };

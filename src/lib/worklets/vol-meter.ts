@@ -7,7 +7,6 @@ class VolMeter extends AudioWorkletProcessor {
     this.updateIntervalInMS = 25;
     this.nextUpdateFrame = this.updateIntervalInMS;
 
-
     this.port.onmessage = event => {
       if (event.data.updateIntervalInMS) {
         this.updateIntervalInMS = event.data.updateIntervalInMS;
@@ -15,15 +14,12 @@ class VolMeter extends AudioWorkletProcessor {
     };
   }
 
-
   get intervalInFrames() {
     return (this.updateIntervalInMS / 1000) * sampleRate;
   }
 
-
   process(inputs) {
     const input = inputs[0];
-
 
     if (input.length > 0 && input[0].length > 0) {
       const samples = input[0];
@@ -33,10 +29,8 @@ class VolMeter extends AudioWorkletProcessor {
         sum += samples[i] * samples[i];
       }
 
-
       const rms = Math.sqrt(sum / samples.length);
       this.volume = Math.max(rms, this.volume * 0.7);
-
 
       this.nextUpdateFrame -= samples.length;
       if (this.nextUpdateFrame < 0) {
@@ -45,12 +39,9 @@ class VolMeter extends AudioWorkletProcessor {
       }
     }
 
-
     return true;
   }
 }
-registerProcessor('vumeter-out', VolMeter);
 `;
-
 
 export default VolMeterWorklet;

@@ -3,14 +3,14 @@
 
 import React from 'react';
 import { useLiveAPIContext } from '@/context/live-api-context';
-import { Mic, MicOff, Power, Video, Loader, Send } from 'lucide-react';
+import { Mic, MicOff, Power, Video, Send, Loader } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Input } from './ui/input';
 
 export function LiveCameraView() {
-  const { connected, stream, text, error, isSpeaking, connect, disconnect, send } = useLiveAPIContext();
+  const { connected, stream, text, error, isSpeaking, isListening, connect, disconnect, send } = useLiveAPIContext();
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const [inputValue, setInputValue] = React.useState('');
 
@@ -41,6 +41,31 @@ export function LiveCameraView() {
     }
   };
 
+  const getStatusIndicator = () => {
+    if (isSpeaking) {
+      return (
+        <div className="flex items-center gap-2 text-primary">
+          <Loader className="animate-spin" />
+          <span>Gemini is speaking...</span>
+        </div>
+      );
+    }
+    if (isListening) {
+      return (
+        <div className="flex items-center gap-2 text-green-600">
+          <Mic />
+          <span>Listening...</span>
+        </div>
+      );
+    }
+    return (
+        <div className="flex items-center gap-2 text-muted-foreground">
+            <MicOff />
+            <span>Not listening</span>
+        </div>
+    );
+  };
+
   return (
     <Card className="shadow-lg w-full max-w-4xl mx-auto">
       <CardContent className="p-6">
@@ -59,7 +84,7 @@ export function LiveCameraView() {
                 <Video className="text-muted-foreground" size={48} />
               )}
             </div>
-            {isSpeaking && (
+            {(isSpeaking || isListening) && (
               <div className="absolute inset-0 flex items-center justify-center rounded-full">
                 <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse"></div>
                 <div className="absolute inset-2 rounded-full bg-primary/20 animate-pulse delay-150"></div>
@@ -79,10 +104,10 @@ export function LiveCameraView() {
               </div>
             ) : (
               <div className='space-y-4'>
-                <div className="flex items-center justify-center sm:justify-start gap-2">
+                <div className="flex items-center justify-center sm:justify-start gap-4">
                    <p className="font-bold text-lg text-green-600">Connected</p>
-                   <p className="text-sm text-muted-foreground">(Microphone is live)</p>
-                  <Button onClick={disconnect} variant="destructive" size="icon">
+                   {getStatusIndicator()}
+                  <Button onClick={disconnect} variant="destructive" size="icon" title="Disconnect">
                     <Power className="h-5 w-5" />
                   </Button>
                 </div>

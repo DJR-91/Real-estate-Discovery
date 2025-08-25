@@ -4,6 +4,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { GoogleGenAI, LiveSession, Part } from '@google/genai';
 import { base64ToArrayBuffer } from '@/lib/utils';
+import { AudioStreamer } from '@/lib/audio-streamer';
+import { audioContext } from '@/lib/utils';
+import VolMeterWorklet from '@/lib/worklets/vol-meter';
 
 export interface UseLiveAPIResults {
   session: LiveSession | null;
@@ -11,6 +14,7 @@ export interface UseLiveAPIResults {
   text: string;
   error: string | null;
   isSpeaking: boolean;
+  isListening: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
   send: (parts: Part | Part[]) => void;
@@ -20,13 +24,14 @@ export interface UseLiveAPIResults {
 export function useLiveAPI(): UseLiveAPIResults {
   const sessionRef = useRef<LiveSession | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioStreamerRef = useRef<AudioStreamer | null>(null);
   
   const [connected, setConnected] = useState(false);
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   
   const disconnect = useCallback(() => {
     sessionRef.current?.close();
@@ -35,39 +40,17 @@ export function useLiveAPI(): UseLiveAPIResults {
     mediaStreamRef.current?.getTracks().forEach(track => track.stop());
     mediaStreamRef.current = null;
     
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-        audioContextRef.current.close();
+    if (audioStreamerRef.current) {
+      audioStreamerRef.current.stop();
+      audioStreamerRef.current = null;
     }
-    audioContextRef.current = null;
 
     setStream(null);
     setConnected(false);
     setText('');
     setError(null);
     setIsSpeaking(false);
-  }, []);
-
-  const playAudio = useCallback(async (audioData: ArrayBuffer) => {
-    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
-    }
-    
-    try {
-      const audioBuffer = await audioContextRef.current.decodeAudioData(audioData);
-      const source = audioContextRef.current.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioContextRef.current.destination);
-      source.start();
-      source.onended = () => {
-        // Check if this was the last buffer to signal speaking has stopped
-        // This is a simplified check; a more robust solution would manage a queue.
-        setIsSpeaking(false);
-      }
-
-    } catch(e) {
-      console.error("Error decoding or playing audio:", e);
-      setError("Failed to play audio response.");
-    }
+    setIsListening(false);
   }, []);
 
   const connect = useCallback(async () => {
@@ -88,6 +71,14 @@ export function useLiveAPI(): UseLiveAPIResults {
       const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       setStream(userMediaStream);
       mediaStreamRef.current = userMediaStream;
+
+      if (!audioStreamerRef.current) {
+        const audioCtx = await audioContext({ id: "audio-out" });
+        const streamer = new AudioStreamer(audioCtx);
+        streamer.onStart = () => setIsSpeaking(true);
+        streamer.onComplete = () => setIsSpeaking(false);
+        audioStreamerRef.current = streamer;
+      }
 
       const genAI = new GoogleGenAI({ apiKey });
       const newSession = await genAI.live.connect({
@@ -110,21 +101,19 @@ export function useLiveAPI(): UseLiveAPIResults {
             if (message.serverContent) {
               if ('interrupted' in message.serverContent) {
                 setText('');
+                audioStreamerRef.current?.stop();
               } else if ('modelTurn' in message.serverContent) {
                 const parts = message.serverContent.modelTurn?.parts || [];
-                let hasAudio = false;
                 parts.forEach(part => {
                   if ('text' in part) {
                     setText(prev => prev + part.text);
                   } else if (part.inlineData?.mimeType?.startsWith("audio/")) {
-                    hasAudio = true;
                     const audioData = base64ToArrayBuffer(part.inlineData.data);
-                    playAudio(audioData);
+                    audioStreamerRef.current?.addPCM16(new Uint8Array(audioData));
                   }
                 });
-                if (hasAudio) {
-                    setIsSpeaking(true);
-                }
+              } else if ('turnComplete' in message.serverContent) {
+                audioStreamerRef.current?.complete();
               }
             } else if (message.clientContent?.turns?.some(t => 'text' in t && t.text)) {
               setText('');
@@ -133,12 +122,13 @@ export function useLiveAPI(): UseLiveAPIResults {
         },
       });
       sessionRef.current = newSession;
+      setIsListening(true); // Auto-start listening on connect
     } catch (e: any) {
       console.error('Failed to initialize or connect to Live API:', e);
       setError(e.message || 'Failed to initialize the API client.');
       disconnect();
     }
-  }, [disconnect, playAudio]);
+  }, [disconnect]);
 
   const send = useCallback((parts: Part | Part[]) => {
     if (sessionRef.current) {
@@ -157,5 +147,6 @@ export function useLiveAPI(): UseLiveAPIResults {
     send,
     stream,
     isSpeaking,
+    isListening,
   };
 }
