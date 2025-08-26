@@ -514,7 +514,7 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-background">
+    <main className="flex min-h-screen flex-col items-center">
       <div
         className="w-full relative bg-cover bg-center"
         style={{
@@ -658,7 +658,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="w-full max-w-6xl space-y-8 p-4 sm:p-8 md:p-12 lg:p-24">
+      <div className="w-full max-w-6xl space-y-8 p-4 sm:p-8 md:p-12 lg:p-24 bg-background">
         <div className="w-full min-h-[20rem] space-y-8">
           {isLoading || isItineraryLoading ? (
             <LoadingState />
@@ -702,10 +702,6 @@ export default function Home() {
           ) : null }
 
           {isEventsLoading ? <LoadingState /> : eventsResponse ? <EventsDisplay data={eventsResponse} /> : null}
-          
-          {hotelResponse && (
-            <HotelDisplay data={hotelResponse} onSelectHotel={handleSelectHotel} />
-          )}
 
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
