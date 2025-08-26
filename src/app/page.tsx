@@ -518,7 +518,7 @@ export default function Home() {
       <div
         className="w-full relative bg-cover bg-center"
         style={{
-          backgroundImage: "url('https://storage.googleapis.com/jfk-files/background.jpeg?authuser=3')",
+          backgroundImage: "url('https://storage.cloud.google.com/jfk-files/background.jpeg?authuser=3')",
         }}
       >
         <div className="relative z-10 bg-black/50">
@@ -719,4 +719,5 @@ export default function Home() {
       </div>
     </main>
   );
-}
+
+    
