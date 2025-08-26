@@ -1,4 +1,7 @@
 
+"use client";
+
+import * as React from "react";
 import type { ItineraryData } from "@/app/page";
 import {
   Card,
@@ -10,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper, Eye } from "lucide-react";
+import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper, Eye, Play, Pause } from "lucide-react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
@@ -47,6 +50,11 @@ function getIconForLocation(name: string): React.ReactNode {
   return locationIcons.default;
 }
 
+function isHotel(name: string): boolean {
+    const lowerName = name.toLowerCase();
+    return lowerName.includes("hotel") || lowerName.includes("inn") || lowerName.includes("lodging");
+}
+
 export function ItineraryDisplay({ 
     data, 
     onFindHotels, 
@@ -56,6 +64,38 @@ export function ItineraryDisplay({
     onSelectLocation,
 }: ItineraryDisplayProps) {
   const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint, weather, isWeatherLoading } = data;
+
+  const audioUrl = "https://storage.cloud.google.com/jfk-files/outbound.wav?authuser=3";
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!audioRef.current) {
+        audioRef.current = new Audio(audioUrl);
+        audioRef.current.onended = () => setIsPlaying(false);
+    }
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+  }, [audioUrl]);
+
+  const handlePlayAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handlePauseAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -133,6 +173,18 @@ export function ItineraryDisplay({
                                 <MapPin className="h-3 w-3" />
                                 {location.address}
                              </p>
+                          )}
+                          {isHotel(location.name) && (
+                            <div className="mt-4 flex gap-2">
+                                <Button onClick={handlePlayAudio} variant="outline" size="sm" disabled={isPlaying}>
+                                    <Play className="mr-2 h-4 w-4" />
+                                    Early Check-in Agent
+                                </Button>
+                                <Button onClick={handlePauseAudio} variant="outline" size="sm" disabled={!isPlaying}>
+                                    <Pause className="mr-2 h-4 w-4" />
+                                    Pause
+                                </Button>
+                            </div>
                           )}
                           {location.imageUrl && (
                             <div className="relative h-32 w-full mt-2 rounded-lg overflow-hidden">
