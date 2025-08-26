@@ -534,7 +534,7 @@ export default function Home() {
 
             <Tabs
               defaultValue="search"
-              className="w-full"
+              className="w-full max-w-4xl mx-auto"
               onValueChange={handleTabChange}
             >
               <TabsList className="grid w-full grid-cols-2">
@@ -548,7 +548,7 @@ export default function Home() {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="search">
-                <Card className="w-full shadow-lg max-w-4xl mx-auto bg-background/90 backdrop-blur-sm">
+                <Card className="w-full shadow-lg bg-background/90 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <p className="text-center text-muted-foreground mb-4">
                       Tell us what you're looking for, and we'll suggest
@@ -592,7 +592,7 @@ export default function Home() {
                 </Card>
               </TabsContent>
               <TabsContent value="video">
-                <Card className="w-full shadow-lg max-w-4xl mx-auto bg-background/90 backdrop-blur-sm">
+                <Card className="w-full shadow-lg bg-background/90 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <p className="text-center text-muted-foreground mb-4">
                       Find inspiring travel videos, then generate a 3-day itinerary.
