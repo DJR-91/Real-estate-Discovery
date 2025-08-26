@@ -2,23 +2,25 @@
 "use client";
 
 import * as React from "react";
-import type { FindHotelsOutput } from "@/ai/schemas/hotel-schema";
+import type { FindHotelsOutput, Hotel } from "@/ai/schemas/hotel-schema";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import Image from "next/image";
-import { Building, MapPin, Play, Pause } from "lucide-react";
+import { Building, MapPin, Play, Pause, PlusCircle } from "lucide-react";
 import { Button } from "./ui/button";
 
 interface HotelDisplayProps {
   data: FindHotelsOutput;
+  onSelectHotel: (hotel: Hotel) => void;
 }
 
-export function HotelDisplay({ data }: HotelDisplayProps) {
+export function HotelDisplay({ data, onSelectHotel }: HotelDisplayProps) {
   const audioUrl = "https://storage.cloud.google.com/jfk-files/outbound.wav?authuser=3";
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = React.useState(false);
@@ -98,9 +100,17 @@ export function HotelDisplay({ data }: HotelDisplayProps) {
                 <span>{hotel.address}</span>
               </p>
             </CardContent>
+            <CardFooter className="p-4 pt-0">
+                <Button onClick={() => onSelectHotel(hotel)} className="w-full">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add to Itinerary
+                </Button>
+            </CardFooter>
           </Card>
         ))}
       </div>
     </div>
   );
 }
+
+    

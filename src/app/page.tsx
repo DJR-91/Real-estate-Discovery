@@ -45,7 +45,7 @@ import { ItineraryDisplay } from "@/components/itinerary-display";
 import MapDisplay from "@/components/map-display";
 import type { Video } from "@/lib/types";
 import { findHotels } from "@/ai/flows/find-hotels";
-import type { FindHotelsOutput } from "@/ai/schemas/hotel-schema";
+import type { FindHotelsOutput, Hotel } from "@/ai/schemas/hotel-schema";
 import { HotelDisplay } from "@/components/hotel-display";
 import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
 import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
@@ -416,6 +416,61 @@ export default function Home() {
     }
   };
 
+  const handleSelectHotel = (hotel: Hotel) => {
+    if (!itineraryResponse) {
+      toast({
+        variant: "destructive",
+        title: "No Itinerary",
+        description: "Please generate an itinerary before adding a hotel.",
+      });
+      return;
+    }
+
+    // Create the new location object for the hotel
+    const hotelLocation: PointOfInterest = {
+      name: hotel.name,
+      description: hotel.description,
+      address: hotel.address,
+      imageUrl: hotel.imageUrl,
+      rating: null, 
+      userRatingCount: null,
+    };
+
+    // Add the hotel to the beginning of the first day's locations
+    setItineraryResponse(prev => {
+      if (!prev) return null;
+      
+      const newItinerary = [...prev.itinerary];
+      if (newItinerary.length > 0) {
+        newItinerary[0] = {
+          ...newItinerary[0],
+          locations: [hotelLocation, ...newItinerary[0].locations],
+        };
+      } else {
+        // If there's no day 1, create it with the hotel
+        newItinerary.push({
+          day: 1,
+          title: "Your First Day",
+          locations: [hotelLocation]
+        });
+      }
+
+      return {
+        ...prev,
+        itinerary: newItinerary,
+      };
+    });
+
+    toast({
+      title: "Hotel Added!",
+      description: `${hotel.name} has been added as the starting point for Day 1.`,
+    });
+    
+    // Hide the hotel search results
+    setHotelResponse(null);
+  };
+
+
   const handleFindEvents = async (destination: string, videoSummary: string) => {
     setIsEventsLoading(true);
     setEventsResponse(null);
@@ -639,7 +694,7 @@ export default function Home() {
             )
           ) : null}
           
-          {isHotelLoading ? <LoadingState /> : hotelResponse ? <HotelDisplay data={hotelResponse} /> : null }
+          {isHotelLoading ? <LoadingState /> : hotelResponse ? <HotelDisplay data={hotelResponse} onSelectHotel={handleSelectHotel} /> : null }
 
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
@@ -660,3 +715,5 @@ export default function Home() {
     </main>
   );
 }
+
+    
