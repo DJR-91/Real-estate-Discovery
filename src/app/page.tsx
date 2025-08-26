@@ -520,7 +520,7 @@ export default function Home() {
         className="w-full relative bg-cover bg-center"
       >
         <Image
-          src="https://storage.cloud.google.com/jfk-files/background.jpeg?authuser=3"
+          src="https://storage.googleapis.com/maker-suite-guides/user-storage/image/0d7426da-0858-4767-a647-7977a3291720"
           alt="Travel background"
           layout="fill"
           objectFit="cover"
@@ -710,6 +710,8 @@ export default function Home() {
             <HotelDisplay data={hotelResponse} onSelectHotel={handleSelectHotel} />
           ) : null }
 
+          {isEventsLoading ? <LoadingState /> : eventsResponse ? <EventsDisplay data={eventsResponse} /> : null}
+          
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
               <MapDisplay data={mapData} itinerary={itineraryResponse?.itinerary} />
@@ -722,10 +724,10 @@ export default function Home() {
             </div>
           )}
 
-          {isEventsLoading ? <LoadingState /> : eventsResponse ? <EventsDisplay data={eventsResponse} /> : null}
-
         </div>
       </div>
     </main>
   );
 }
+
+    
