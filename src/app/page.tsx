@@ -52,7 +52,6 @@ import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
 import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
 import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
-import { VideoResultHeader } from "@/components/video-result-header";
 import { EventsDisplay } from "@/components/events-display";
 import { LiveCameraView } from "@/components/live-camera-view";
 import { useLiveStore } from "@/store/live-store";
@@ -518,15 +517,10 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center bg-background">
       <div
         className="w-full relative bg-cover bg-center"
+        style={{
+          backgroundImage: "url('https://storage.googleapis.com/jfk-files/background.jpeg?authuser=3')",
+        }}
       >
-        <Image
-          src="https://storage.googleapis.com/maker-suite-guides/user-storage/image/0d7426da-0858-4767-a647-7977a3291720"
-          alt="Travel background"
-          layout="fill"
-          objectFit="cover"
-          quality={100}
-          className="absolute z-0"
-        />
         <div className="relative z-10 bg-black/50">
           <div className="w-full max-w-6xl mx-auto space-y-8 p-4 sm:p-8 md:p-12 lg:p-24">
             <header className="text-center">
@@ -690,9 +684,6 @@ export default function Home() {
               />
             ) : videoResponse ? (
               <>
-                <VideoResultHeader 
-                  destination={videoSearchForm.getValues("destination")}
-                />
                 <VideoResultDisplay data={videoResponse} onGenerateItinerary={handleGenerateItinerary} />
               </>
             ) : (
@@ -712,6 +703,10 @@ export default function Home() {
 
           {isEventsLoading ? <LoadingState /> : eventsResponse ? <EventsDisplay data={eventsResponse} /> : null}
           
+          {hotelResponse && (
+            <HotelDisplay data={hotelResponse} onSelectHotel={handleSelectHotel} />
+          )}
+
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
               <MapDisplay data={mapData} itinerary={itineraryResponse?.itinerary} />
@@ -729,5 +724,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
