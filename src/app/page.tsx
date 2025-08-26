@@ -653,14 +653,7 @@ export default function Home() {
             <LoadingState />
           ) : activeTab === "search" ? (
             groundedResponse ? (
-              <>
-                <div className="flex justify-between items-start mb-4">
-                    <VideoResultHeader
-                      destination={"Places of Interest"}
-                    />
-                </div>
-                <ResultsDisplay data={groundedResponse} />
-              </>
+              <ResultsDisplay data={groundedResponse} />
             ) : (
               <Card className="text-center p-12 border-dashed flex items-center justify-center h-full max-w-4xl mx-auto">
                 <h2 className="text-xl font-medium text-muted-foreground">
@@ -694,7 +687,11 @@ export default function Home() {
             )
           ) : null}
           
-          {isHotelLoading ? <LoadingState /> : hotelResponse ? <HotelDisplay data={hotelResponse} onSelectHotel={handleSelectHotel} /> : null }
+          {isHotelLoading ? (
+            <LoadingState />
+          ) : hotelResponse ? (
+            <HotelDisplay data={hotelResponse} onSelectHotel={handleSelectHotel} />
+          ) : null }
 
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
@@ -715,5 +712,7 @@ export default function Home() {
     </main>
   );
 }
+
+    
 
     
