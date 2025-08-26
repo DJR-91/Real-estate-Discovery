@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -514,140 +515,156 @@ export default function Home() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-4 sm:p-8 md:p-12 lg:p-24 bg-background">
-      <div className="w-full max-w-6xl space-y-8">
-        <header className="text-center">
-          <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            Find Your Next Travel Experience
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Use AI to discover destinations or find travel inspiration from YouTube.
-          </p>
-        </header>
+    <main className="flex min-h-screen flex-col items-center bg-background">
+      <div
+        className="w-full relative bg-cover bg-center"
+      >
+        <Image
+          src="https://storage.cloud.google.com/jfk-files/background.jpeg?authuser=3"
+          alt="Travel background"
+          layout="fill"
+          objectFit="cover"
+          quality={100}
+          className="absolute z-0"
+        />
+        <div className="relative z-10 bg-black/50">
+          <div className="w-full max-w-6xl mx-auto space-y-8 p-4 sm:p-8 md:p-12 lg:p-24">
+            <header className="text-center">
+              <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-white">
+                Find Your Next Travel Experience
+              </h1>
+              <p className="mt-4 text-lg text-white/80 max-w-2xl mx-auto">
+                Use AI to discover destinations or find travel inspiration from YouTube.
+              </p>
+            </header>
 
-        <Tabs
-          defaultValue="search"
-          className="w-full"
-          onValueChange={handleTabChange}
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="search">
-              <Search className="mr-2 h-4 w-4" />
-              Grounded Search
-            </TabsTrigger>
-            <TabsTrigger value="video">
-              <Youtube className="mr-2 h-4 w-4" />
-              Video & Itinerary Search
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="search">
-            <Card className="w-full shadow-lg max-w-4xl mx-auto">
-              <CardContent className="p-6">
-                <p className="text-center text-muted-foreground mb-4">
-                  Tell us what you're looking for, and we'll suggest
-                  destinations, activities, and itineraries grounded in
-                  real-time information.
-                </p>
-                <Form {...groundedSearchForm}>
-                  <form
-                    onSubmit={groundedSearchForm.handleSubmit(
-                      onGroundedSearchSubmit
-                    )}
-                    className="flex items-start gap-4"
-                  >
-                    <FormField
-                      control={groundedSearchForm.control}
-                      name="query"
-                      render={({ field }) => (
-                        <FormItem className="flex-grow">
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., 'family-friendly beach vacation in Southeast Asia'"
-                              {...field}
-                              className="text-base"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" disabled={isLoading} size="lg">
-                      {isLoading ? (
-                        <Loader className="mr-2 h-5 w-5 animate-spin" />
-                      ) : (
-                        <Sparkles className="mr-2 h-5 w-5" />
-                      )}
-                      AI Mode
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="video">
-            <Card className="w-full shadow-lg max-w-4xl mx-auto">
-              <CardContent className="p-6">
-                <p className="text-center text-muted-foreground mb-4">
-                  Find inspiring travel videos, then generate a 3-day itinerary.
-                </p>
-                <Form {...videoSearchForm}>
-                  <form
-                    onSubmit={videoSearchForm.handleSubmit(onVideoSearchSubmit)}
-                    className="flex flex-col sm:flex-row items-start gap-4"
-                  >
-                    <FormField
-                      control={videoSearchForm.control}
-                      name="destination"
-                      render={({ field }) => (
-                        <FormItem className="flex-grow w-full">
-                          <FormControl>
-                            <Input
-                              placeholder="Destination (e.g., 'Tokyo')"
-                              {...field}
-                              className="text-base"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={videoSearchForm.control}
-                      name="travelType"
-                      render={({ field }) => (
-                        <FormItem className="flex-grow w-full">
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="text-base">
-                                <SelectValue placeholder="Select a travel style" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {travelStyles.map((style) => (
-                                <SelectItem key={style} value={style}>
-                                  {style}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button type="submit" disabled={isLoading} size="lg" className="w-full sm:w-auto">
-                      <Youtube className="mr-2 h-5 w-5" />
-                      Search Videos
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+            <Tabs
+              defaultValue="search"
+              className="w-full"
+              onValueChange={handleTabChange}
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="search">
+                  <Search className="mr-2 h-4 w-4" />
+                  Grounded Search
+                </TabsTrigger>
+                <TabsTrigger value="video">
+                  <Youtube className="mr-2 h-4 w-4" />
+                  Video & Itinerary Search
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="search">
+                <Card className="w-full shadow-lg max-w-4xl mx-auto bg-background/90 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <p className="text-center text-muted-foreground mb-4">
+                      Tell us what you're looking for, and we'll suggest
+                      destinations, activities, and itineraries grounded in
+                      real-time information.
+                    </p>
+                    <Form {...groundedSearchForm}>
+                      <form
+                        onSubmit={groundedSearchForm.handleSubmit(
+                          onGroundedSearchSubmit
+                        )}
+                        className="flex items-start gap-4"
+                      >
+                        <FormField
+                          control={groundedSearchForm.control}
+                          name="query"
+                          render={({ field }) => (
+                            <FormItem className="flex-grow">
+                              <FormControl>
+                                <Input
+                                  placeholder="e.g., 'family-friendly beach vacation in Southeast Asia'"
+                                  {...field}
+                                  className="text-base"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="submit" disabled={isLoading} size="lg">
+                          {isLoading ? (
+                            <Loader className="mr-2 h-5 w-5 animate-spin" />
+                          ) : (
+                            <Sparkles className="mr-2 h-5 w-5" />
+                          )}
+                          AI Mode
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="video">
+                <Card className="w-full shadow-lg max-w-4xl mx-auto bg-background/90 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <p className="text-center text-muted-foreground mb-4">
+                      Find inspiring travel videos, then generate a 3-day itinerary.
+                    </p>
+                    <Form {...videoSearchForm}>
+                      <form
+                        onSubmit={videoSearchForm.handleSubmit(onVideoSearchSubmit)}
+                        className="flex flex-col sm:flex-row items-start gap-4"
+                      >
+                        <FormField
+                          control={videoSearchForm.control}
+                          name="destination"
+                          render={({ field }) => (
+                            <FormItem className="flex-grow w-full">
+                              <FormControl>
+                                <Input
+                                  placeholder="Destination (e.g., 'Tokyo')"
+                                  {...field}
+                                  className="text-base"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={videoSearchForm.control}
+                          name="travelType"
+                          render={({ field }) => (
+                            <FormItem className="flex-grow w-full">
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="text-base">
+                                    <SelectValue placeholder="Select a travel style" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {travelStyles.map((style) => (
+                                    <SelectItem key={style} value={style}>
+                                      {style}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="submit" disabled={isLoading} size="lg" className="w-full sm:w-auto">
+                          <Youtube className="mr-2 h-5 w-5" />
+                          Search Videos
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
 
+      <div className="w-full max-w-6xl space-y-8 p-4 sm:p-8 md:p-12 lg:p-24">
         <div className="w-full min-h-[20rem] space-y-8">
           {isLoading || isItineraryLoading ? (
             <LoadingState />
@@ -712,7 +729,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
-
-    
