@@ -125,12 +125,16 @@ export function useLiveAPI() {
       
       const genAI = new GoogleGenAI({ apiKey });
 
-      let initialPrompt: Part[] | undefined = undefined;
+      let initialContent: Part[] | undefined = undefined;
       if (data) {
         startTour(data);
-        const promptText = await getTourPrompt(0, data);
-        if (promptText) {
-          initialPrompt = [{ text: promptText }];
+        const welcomePrompt = await getTourPrompt(0, data);
+        if (welcomePrompt) {
+          const systemPrompt = `You are a friendly and expert tour guide for a user named Andy. Your goal is to lead him on a virtual tour of his upcoming trip to ${data.destination}. Wait for him to say "next" or "continue" before proceeding to the next location. You must follow the instructions and speak the introductory message provided below.`;
+          initialContent = [
+            {text: systemPrompt},
+            {text: welcomePrompt}
+          ];
         }
       }
       
@@ -142,7 +146,7 @@ export function useLiveAPI() {
           text: {},
         },
         stream: userMediaStream,
-        initialContent: initialPrompt,
+        initialContent: initialContent,
         callbacks: {
           onopen: () => {
             setConnected(true);
