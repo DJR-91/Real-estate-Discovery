@@ -54,7 +54,7 @@ export function useLiveAPI() {
                 `Day ${day.day}, themed "${day.title}", will take you to locations like ${day.locations.map(l => l.name).join(', ')}.`
             ).join(' ');
 
-            return `Hello! I'm your expert tour guide for ${data.destination}. I'm here to provide a preview tour of your exciting trip. Here's a quick look at your 3-day plan: ${itinerarySummary} Now, let's start our tour. Our first stop is ${location.name}. ${description}. Let me know when you're ready for the next stop.`;
+            return `Welcome back, Andy, and thank you for being a genius level 1 customer! We understand your travel budget preferences and have tailored these recommendations based on your travel history. I'm your expert tour guide for ${data.destination}, and I'm here to provide a preview of your exciting trip. Here's a quick look at your 3-day plan: ${itinerarySummary} Now, let's start our tour. Our first stop is ${location.name}. ${description}. Let me know when you're ready for the next stop.`;
         }
         return `Next up is ${location.name}. ${description}. What's next on your mind?`;
 
@@ -84,71 +84,10 @@ export function useLiveAPI() {
       session.sendClientContent({ turns: [{ role: 'user', parts: [{ text: command }] }] });
     }
   }, [tourIndex, itineraryData, getTourPrompt, session, setTourIndex, setText]);
-
-  const { connect, disconnect, send } = useLiveStore(state => ({
-    connect: state.connect,
-    disconnect: state.disconnect,
-    send: state.send,
-  }));
   
   const streamFromStore = useLiveStore((state) => state.stream);
 
-  // Effect to enable/disable mic track based on `micActive` state
-  useEffect(() => {
-    if (streamFromStore) {
-        streamFromStore.getAudioTracks().forEach(track => {
-            track.enabled = micActive;
-        });
-    }
-  }, [micActive, streamFromStore]);
-
-    // Effect to enable/disable camera track based on `cameraActive` state
-  useEffect(() => {
-    if (streamFromStore) {
-        streamFromStore.getVideoTracks().forEach(track => {
-            track.enabled = cameraActive;
-        });
-    }
-  }, [cameraActive, streamFromStore]);
-
-  // Effect for volume meter
-  useEffect(() => {
-    if (streamFromStore && isListening) {
-      const audioContext = new AudioContext();
-      const analyser = audioContext.createAnalyser();
-      const source = audioContext.createMediaStreamSource(streamFromStore);
-      source.connect(analyser);
-      analyser.fftSize = 256;
-      const bufferLength = analyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      let animationFrameId: number;
-
-      const monitor = () => {
-        analyser.getByteFrequencyData(dataArray);
-        const average = dataArray.reduce((acc, val) => acc + val, 0) / bufferLength;
-        const currentVolume = average / 128;
-        setVolume(currentVolume);
-        animationFrameId = requestAnimationFrame(monitor);
-      };
-      monitor();
-
-      return () => {
-        cancelAnimationFrame(animationFrameId);
-        source.disconnect();
-        analyser.disconnect();
-        audioContext.close().catch(console.error);
-      };
-    } else {
-      setVolume(0);
-    }
-  }, [streamFromStore, isListening, setVolume]);
-  
-  // Update the global isListening state based on mic and speaking status
-  useEffect(() => {
-    setIsListening(isListening);
-  }, [isListening, setIsListening]);
-  
-  const initializeAndConnect = useCallback(async (data?: ItineraryData) => {
+  const connect = useCallback(async (data?: ItineraryData) => {
     if (session) return;
 
     setError(null);
@@ -176,7 +115,6 @@ export function useLiveAPI() {
 
       const userMediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       
-      // Initially set the microphone track to be active based on the store's state
       userMediaStream.getAudioTracks().forEach(track => {
         track.enabled = micActive;
       });
@@ -248,7 +186,7 @@ export function useLiveAPI() {
     }
   }, [reset, micActive, cameraActive, session, appendText, getTourPrompt, setConnected, setError, setIsSpeaking, setSession, setStream, startTour, setText]);
   
-  const sendContent = useCallback((parts: Part | Part[]) => {
+  const send = useCallback((parts: Part | Part[]) => {
     if (!session) return;
     
     const commandPart = Array.isArray(parts) ? parts.find(p => 'text' in p) : ('text' in parts ? parts : undefined);
@@ -261,13 +199,67 @@ export function useLiveAPI() {
     session.sendClientContent({ turns: [{ role: 'user', parts: Array.isArray(parts) ? parts : [parts] }] });
   }, [session, itineraryData, processUserCommand]);
 
+  const disconnect = useCallback(() => {
+    if (session) {
+      session.disconnect();
+      reset();
+    }
+  }, [session, reset]);
+
+  // Effect to enable/disable mic track based on `micActive` state
   useEffect(() => {
-    useLiveStore.setState({
-      connect: initializeAndConnect,
-      disconnect: reset,
-      send: sendContent
-    });
-  }, [initializeAndConnect, reset, sendContent]);
+    if (streamFromStore) {
+        streamFromStore.getAudioTracks().forEach(track => {
+            track.enabled = micActive;
+        });
+    }
+  }, [micActive, streamFromStore]);
+
+    // Effect to enable/disable camera track based on `cameraActive` state
+  useEffect(() => {
+    if (streamFromStore) {
+        streamFromStore.getVideoTracks().forEach(track => {
+            track.enabled = cameraActive;
+        });
+    }
+  }, [cameraActive, streamFromStore]);
+
+  // Effect for volume meter
+  useEffect(() => {
+    if (streamFromStore && isListening) {
+      const audioContext = new AudioContext();
+      const analyser = audioContext.createAnalyser();
+      const source = audioContext.createMediaStreamSource(streamFromStore);
+      source.connect(analyser);
+      analyser.fftSize = 256;
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      let animationFrameId: number;
+
+      const monitor = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((acc, val) => acc + val, 0) / bufferLength;
+        const currentVolume = average / 128;
+        setVolume(currentVolume);
+        animationFrameId = requestAnimationFrame(monitor);
+      };
+      monitor();
+
+      return () => {
+        cancelAnimationFrame(animationFrameId);
+        source.disconnect();
+        analyser.disconnect();
+        audioContext.close().catch(console.error);
+      };
+    } else {
+      setVolume(0);
+    }
+  }, [streamFromStore, isListening, setVolume]);
+  
+  // Update the global isListening state based on mic and speaking status
+  useEffect(() => {
+    setIsListening(isListening);
+  }, [isListening, setIsListening]);
 
   return { connect, disconnect, send };
 }
