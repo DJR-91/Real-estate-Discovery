@@ -639,6 +639,8 @@ export default function Home() {
             )
           ) : null}
           
+          {isHotelLoading ? <LoadingState /> : hotelResponse ? <HotelDisplay data={hotelResponse} /> : null }
+
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
               <MapDisplay data={mapData} itinerary={itineraryResponse?.itinerary} />
@@ -651,8 +653,6 @@ export default function Home() {
             </div>
           )}
 
-          {isHotelLoading ? <LoadingState /> : hotelResponse ? <HotelDisplay data={hotelResponse} /> : null }
-
           {isEventsLoading ? <LoadingState /> : eventsResponse ? <EventsDisplay data={eventsResponse} /> : null}
 
         </div>
@@ -660,5 +660,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
