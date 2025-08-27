@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "./ui/button";
-import { CalendarDays, Clock, Link, MapPin, PartyPopper, Star, Tag, Timer, Ticket, Wallet, CheckCircle, Award } from "lucide-react";
+import { CalendarDays, Clock, MapPin, PartyPopper, Star, Tag, Timer, PlusCircle, Wallet, CheckCircle, Award } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 
@@ -45,14 +45,6 @@ export function EventsDisplay({ data }: EventsDisplayProps) {
                         </div>
                     </CardContent>
                     </div>
-                    <CardFooter>
-                    <a href={event.url} target="_blank" rel="noopener noreferrer" className="w-full">
-                        <Button variant="outline" className="w-full">
-                        <Link className="mr-2 h-4 w-4" />
-                        Learn More
-                        </Button>
-                    </a>
-                    </CardFooter>
                 </Card>
                 ))}
             </div>
@@ -90,8 +82,8 @@ export function EventsDisplay({ data }: EventsDisplayProps) {
                 </div>
                 <CardFooter>
                     <Button variant="default" className="w-full">
-                        <Ticket className="mr-2 h-4 w-4" />
-                        Book Now
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add to Itinerary
                     </Button>
                 </CardFooter>
               </Card>
