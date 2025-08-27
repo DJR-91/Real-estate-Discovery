@@ -19,6 +19,7 @@ import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { WeatherDisplay } from "./weather-display";
 import type { PointOfInterest } from "@/ai/schemas/grounded-response-schema";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 interface ItineraryDisplayProps {
   data: ItineraryData;
@@ -129,7 +130,7 @@ export function ItineraryDisplay({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1">
+            <div className="md:col-span-1 space-y-4">
               <a href={video.url} target="_blank" rel="noopener noreferrer">
                 <Image
                   src={video.thumbnail}
@@ -140,6 +141,23 @@ export function ItineraryDisplay({
                   data-ai-hint="youtube thumbnail"
                 />
               </a>
+              <div className="w-full text-center space-y-2 pt-4">
+                <h3 className="font-headline text-xl text-primary">Immersive Trip Experience</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto">Step into a virtual world and experience your destination like never before.</p>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>Launch Immersive Experience</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-none w-[90vw] h-[90vh] p-0">
+                      <DialogTitle className="sr-only">Immersive Trip Experience</DialogTitle>
+                      <iframe 
+                          src="https://interstellar-demo-0003-wtyerc7rsa-uc.a.run.app/?seed=405&temperature=0.0" 
+                          className="w-full h-full border-0 rounded-lg"
+                          allow="camera; microphone"
+                      />
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
             <div className="md:col-span-2 space-y-6">
               {itinerary.map((day) => (
