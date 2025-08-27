@@ -401,7 +401,7 @@ export default function Home() {
           { name: 'Aman Tokyo', address: '1-5-6 Otemachi, Chiyoda-ku, Tokyo, 100-0004, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A serene, luxurious escape with a stunning indoor pool and modern ryokan-inspired design.' },
           { name: 'Hoshinoya Tokyo', address: '1-9-1 Otemachi, Chiyoda-ku, Tokyo, 100-0004, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A modern luxury ryokan experience in the heart of the city, complete with its own onsen.' },
           { name: 'The Peninsula Tokyo', address: '1-8-1 Yurakucho, Chiyoda-ku, Tokyo, 100-0006, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'Unparalleled luxury and service with a prime location overlooking the Imperial Palace gardens.' },
-          { name: 'Claska', address: '1-3-18 Chuo-cho, Meguro-ku, Tokyo, 152-0001, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A stylish design hotel in a quieter neighborhood, known for its art gallery and creative atmosphere.' },
+          { name: 'InterContinental New York Barclay', address: '111 E 48th St, New York, NY 10017', imageUrl: 'https://placehold.co/600x400.png', description: 'A classic luxury hotel in the heart of Midtown Manhattan.' },
           { name: 'Trunk (Hotel) Yoyogi Park', address: '1-15-2 Tomigaya, Shibuya-ku, Tokyo, 151-0063, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A trendy hotel with a focus on local culture, featuring a rooftop pool with views of Yoyogi Park.' }
         ]
       };
@@ -777,15 +777,5 @@ export default function Home() {
       </div>
     </main>
   );
-
-    
-
-
-
-    
-
-    
-
-    
 
     
