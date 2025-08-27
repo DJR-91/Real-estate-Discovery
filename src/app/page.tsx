@@ -53,8 +53,8 @@ import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
 import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { EventsDisplay } from "@/components/events-display";
-import { LiveCameraView } from "@/components/live-camera-view";
 import { useLiveStore } from "@/store/live-store";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 
 
 const groundedSearchSchema = z.object({
@@ -711,8 +711,27 @@ export default function Home() {
 
         </div>
       </div>
+      <div className="w-full text-center space-y-4 p-4 sm:p-8 md:p-12 lg:p-24 bg-muted/50">
+        <h2 className="font-headline text-3xl text-primary">Immersive Trip Experience</h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">Step into a virtual world and experience your destination like never before. Launch the interactive demo to explore.</p>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="lg">Launch Immersive Experience</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-none w-[90vw] h-[90vh] p-0">
+              <iframe 
+                  src="https://interstellar-demo-0003-wtyerc7rsa-uc.a.run.app/?seed=405&temperature=0.0" 
+                  className="w-full h-full border-0 rounded-lg"
+                  allow="camera; microphone"
+              />
+          </DialogContent>
+        </Dialog>
+      </div>
     </main>
   );
 
     
 
+
+
+    
