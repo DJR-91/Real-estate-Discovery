@@ -6,7 +6,8 @@ import { z } from 'genkit';
 
 // Input schema for the hotel finding flow
 export const FindHotelsInputSchema = z.object({
-  destination: z.string().describe('The destination city to search for hotels in (e.g., "Tokyo").'),
+  latitude: z.number().describe('The latitude of the center point for the hotel search.'),
+  longitude: z.number().describe('The longitude of the center point for the hotel search.'),
 });
 export type FindHotelsInput = z.infer<typeof FindHotelsInputSchema>;
 

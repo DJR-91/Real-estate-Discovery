@@ -1,5 +1,5 @@
 
-import { Client, PlaceInputType, GeocodeResponse, GeocodeRequest, TextSearchRequest, Place } from "@googlemaps/google-maps-services-js";
+import { Client, PlaceInputType, GeocodeResponse, GeocodeRequest, TextSearchRequest, Place, PlacesNearbyRequest } from "@googlemaps/google-maps-services-js";
 import { ai } from "@/ai/genkit";
 import { z } from "zod";
 
@@ -110,22 +110,60 @@ export const findPlaceTool = ai.defineTool(
       }
     }
   );
-
-  const findNearbyHotelsToolSchema = z.object({
-    query: z.string().describe('The search query for hotels, e.g., "hotels in Tokyo".'),
-  });
   
-  const hotelResultSchema = z.object({
+  const placeResultSchema = z.object({
     name: z.string(),
     address: z.string(),
     imageUrl: z.string().nullable(),
   });
-  
+
+  export const findNearbyPlacesTool = ai.defineTool({
+    name: 'findNearbyPlaces',
+    description: 'Finds places of a specific type within a radius of a given location.',
+    inputSchema: z.object({
+        latitude: z.number(),
+        longitude: z.number(),
+        radius: z.number().describe('The search radius in meters.'),
+        type: z.string().describe('The type of place to search for (e.g., "lodging", "restaurant").'),
+    }),
+    outputSchema: z.array(placeResultSchema),
+  }, async (input) => {
+    const request: PlacesNearbyRequest = {
+        params: {
+            location: { lat: input.latitude, lng: input.longitude },
+            radius: input.radius,
+            type: input.type,
+            key: process.env.GOOGLE_MAPS_API_KEY!,
+        }
+    };
+    try {
+        const response = await mapsClient.placesNearby(request);
+        const places = response.data.results.slice(0, 6).map((place: Place) => {
+          let imageUrl = null;
+          if (place.photos && place.photos.length > 0) {
+            const photoReference = place.photos[0].photo_reference;
+            imageUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photoReference}&key=${process.env.GOOGLE_MAPS_API_KEY!}`;
+          }
+          return {
+            name: place.name || 'Unknown Place',
+            address: place.vicinity || 'Address not available',
+            imageUrl,
+          };
+        });
+        return places;
+      } catch (error) {
+        console.error(`Google Maps Nearby Search error:`, error);
+        throw new Error(`Failed to find nearby places.`);
+      }
+  });
+
   export const findNearbyHotelsTool = ai.defineTool({
       name: 'findNearbyHotels',
       description: 'Finds hotels near a specified location using a text search.',
-      inputSchema: findNearbyHotelsToolSchema,
-      outputSchema: z.array(hotelResultSchema),
+      inputSchema: z.object({
+        query: z.string().describe('The search query for hotels, e.g., "hotels in Tokyo".'),
+      }),
+      outputSchema: z.array(placeResultSchema),
     },
     async (input) => {
       const request: TextSearchRequest = {

@@ -23,7 +23,7 @@ import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
 interface ItineraryDisplayProps {
   data: ItineraryData;
-  onFindHotels: (destination: string) => void;
+  onFindHotels: (firstLocation: PointOfInterest) => void;
   isHotelLoading: boolean;
   onFindEvents: (destination: string, videoSummary: string) => void;
   isEventsLoading: boolean;
@@ -94,6 +94,13 @@ export function ItineraryDisplay({
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
+    }
+  };
+
+  const handleFindHotelsClick = () => {
+    const firstLocation = itinerary[0]?.locations[0];
+    if (firstLocation) {
+        onFindHotels(firstLocation);
     }
   };
 
@@ -229,16 +236,16 @@ export function ItineraryDisplay({
             <div className="w-full md:w-auto text-center mx-auto">
                 <h3 className="font-headline text-xl text-primary mb-2">Ready to Book?</h3>
                 <p className="text-muted-foreground mb-4">Find hotels and places near the recommended itinerary.</p>
-                <Button onClick={() => onFindHotels(destination)} disabled={isHotelLoading}>
+                <Button onClick={handleFindHotelsClick} disabled={isHotelLoading}>
                     {isHotelLoading ? (
                         <Loader className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                         <Hotel className="mr-2 h-4 w-4" />
                     )}
-                    Find Hotels in {destination}
+                    Find Hotels Nearby
                 </Button>
             </div>
-            <div className="w-full md:w-auto text-center mx-auto">
+            <div className="w-all md:w-auto text-center mx-auto">
                 <h3 className="font-headline text-xl text-primary mb-2">What's Happening?</h3>
                 <p className="text-muted-foreground mb-4">Discover trendy, upcoming events at your destination.</p>
                 <Button onClick={() => onFindEvents(destination, videoSummary)} disabled={isEventsLoading}>

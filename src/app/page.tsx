@@ -387,12 +387,14 @@ export default function Home() {
     }
   };
 
-  const handleFindHotels = async (destination: string) => {
+  const handleFindHotels = async (firstLocation: PointOfInterest) => {
     setIsHotelLoading(true);
     setHotelResponse(null);
+
     try {
-      const result = await findHotels({ destination });
-      setHotelResponse(result);
+        const coords = await geocodeAddress(firstLocation.address || firstLocation.name);
+        const result = await findHotels({ latitude: coords.lat, longitude: coords.lng });
+        setHotelResponse(result);
     } catch (error) {
       console.error("Failed to find hotels:", error);
       const mockHotels = {
@@ -754,6 +756,23 @@ export default function Home() {
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
               <MapDisplay data={mapData} itinerary={itineraryResponse?.itinerary} />
+              <div className="w-full text-center space-y-2 pt-4">
+                <h3 className="font-headline text-xl text-primary">Immersive Trip Experience</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mx-auto">Step into a virtual world and experience your destination like never before.</p>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>Launch Immersive Experience</Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-none w-[90vw] h-[90vh] p-0">
+                      <DialogTitle className="sr-only">Immersive Trip Experience</DialogTitle>
+                      <iframe 
+                          src="https://interstellar-demo-0003-wtyerc7rsa-uc.a.run.app/?seed=405&temperature=0.0" 
+                          className="w-full h-full border-0 rounded-lg"
+                          allow="camera; microphone"
+                      />
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           )}
 
@@ -764,4 +783,5 @@ export default function Home() {
   );
 
     
+
 
