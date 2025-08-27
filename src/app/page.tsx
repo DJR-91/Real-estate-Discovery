@@ -709,15 +709,10 @@ export default function Home() {
             </div>
           )}
 
-          {itineraryResponse && !isItineraryLoading && (
-            <div className="pt-8 space-y-8">
-                <LiveCameraView itineraryData={itineraryResponse} />
-            </div>
-          )}
-
         </div>
       </div>
     </main>
   );
 
     
+
