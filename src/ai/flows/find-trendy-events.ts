@@ -163,7 +163,85 @@ const newYorkMockData: FindTrendyEventsOutput = {
             url: "https://example.com/foliage-cruise"
         }
     ],
-    tours: [] // No specific tours provided for NYC in the prompt
+    tours: [
+        {
+          title: "Empire State Building Admission",
+          location: "New York",
+          tags: [],
+          description: "Tickets to experience one of the the most famous buildings in the world",
+          duration: "45 minutes - 1 hour 30 minutes",
+          reviews: { rating: 4.4, rating_text: "Excellent", count: 1623 },
+          features: { free_cancellation: true },
+          pricing: { currency: "USD", from_price: 50.00 },
+          availability: "Available starting Oct 1"
+        },
+        {
+          title: "Admission to The Museum of Modern Art",
+          location: "New York",
+          tags: [],
+          description: "A ticket to explore the museum of contemporary and modern art",
+          duration: "24 hours",
+          reviews: { rating: 4.6, rating_text: "Excellent", count: 928 },
+          features: { free_cancellation: true },
+          pricing: { currency: "USD", from_price: 30.00 },
+          availability: "Available starting Oct 1"
+        },
+        {
+          title: "Top of the Rock Admission",
+          location: "New York",
+          tags: [],
+          description: "A ticket providing admission to the observation deck of the Rockefeller Center",
+          duration: "1 hour",
+          reviews: { rating: 4.5, rating_text: "Excellent", count: 652 },
+          features: { free_cancellation: true },
+          pricing: { currency: "USD", from_price: 41.16 },
+          availability: "Available starting Oct 1"
+        },
+        {
+          title: "Starship 90 Min New York City Statue of Liberty, Bridges, Skyline",
+          location: "New York",
+          tags: [],
+          description: "Explore NYC's iconic landmarks and soak in breathtaking views of the city in just 90 minutes!",
+          duration: "1 hour 30 minutes",
+          reviews: { rating: 4.7, rating_text: "Exceptional", count: 1338 },
+          features: { free_cancellation: true },
+          pricing: { currency: "USD", from_price: 35.00 },
+          availability: "Available starting Oct 1"
+        },
+        {
+          title: "New York CityPASS",
+          location: "New York",
+          tags: [],
+          description: "A sightseeing pass to explore Big Apple attractions at your own pace across nine days",
+          duration: "",
+          reviews: { rating: 4.5, rating_text: "Excellent", count: 448 },
+          features: { free_cancellation: false },
+          pricing: { currency: "USD", from_price: 154.00 },
+          availability: "Available starting Oct 1"
+        },
+        {
+          title: "One World Observatory Standard Admission",
+          location: "New York",
+          tags: [],
+          description: "A visit to the One World Observatory at New York's Freedom Tower",
+          duration: "",
+          reviews: { rating: 4.7, rating_text: "Exceptional", count: 846 },
+          features: { free_cancellation: true },
+          pricing: { currency: "USD", from_price: 42.00 },
+          availability: "Available starting Oct 1"
+        },
+        {
+          title: "Guided Borough Sightseeing Tour",
+          location: "New York",
+          tags: ["Early booking recommended"],
+          description: "A chance to discover four boroughs in New York City, as well as a variety of landmarks and attractions",
+          duration: "7 hours",
+          reviews: { rating: 4.4, rating_text: "Excellent", count: 7 },
+          features: { free_cancellation: true },
+          pricing: { currency: "USD", from_price: 76.00 },
+          availability: "Available starting Oct 1"
+        }
+    ]
 };
 
 
