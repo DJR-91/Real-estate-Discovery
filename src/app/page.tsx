@@ -54,7 +54,7 @@ import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { EventsDisplay } from "@/components/events-display";
 import { useLiveStore } from "@/store/live-store";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 
 const groundedSearchSchema = z.object({
@@ -481,12 +481,58 @@ export default function Home() {
       console.error("Failed to find events:", error);
       const mockEvents = {
         events: [
-          { name: 'Tokyo Ramen Show 2025', description: 'The largest outdoor ramen event in Japan, featuring famous shops from across the country. (Oct 2025)', url: 'https://example.com/ramen-show' },
-          { name: 'Ginza Sake & Food Festival', description: 'Taste premium sake paired with gourmet bites from Ginza\'s top restaurants. (Oct 2025)', url: 'https://example.com/sake-fest' },
-          { name: 'Autumn Truffle Week', description: 'Experience exclusive menus featuring the rare autumn truffle at fine dining establishments. (Oct 2025)', url: 'https://example.com/truffle-week' },
-          { name: 'Christmas Market at Hibiya Park', description: 'Enjoy classic German-style Christmas food, hot wine, and festive decorations. (Dec 2025)', url: 'https://example.com/christmas-market' },
-          { name: 'World Wagyu Expo', description: 'A massive celebration of Japanese beef, with tasting booths and cooking demonstrations. (Dec 2025)', url: 'https://example.com/wagyu-expo' },
-          { name: 'Artisanal Mochi Pounding Festival', description: 'Join in the traditional new year preparations and taste freshly made mochi. (Dec 2025)', url: 'https://example.com/mochi-fest' },
+          { name: 'Tokyo Ramen Show 2025', description: 'The largest outdoor ramen event in Japan, featuring famous shops from across the country. (Oct 2025)', url: 'https://example.com/ramen-show', location: "Komazawa Olympic Park", date: "23 October - 3 November 2025", time: "10:00am - 8:30pm" },
+          { name: 'Ginza Sake & Food Festival', description: 'Taste premium sake paired with gourmet bites from Ginza\'s top restaurants. (Oct 2025)', url: 'https://example.com/sake-fest', location: "Ginza Crossing", date: "15-16 November 2025", time: "11:00am - 7:00pm" },
+          { name: 'Autumn Truffle Week', description: 'Experience exclusive menus featuring the rare autumn truffle at fine dining establishments. (Oct 2025)', url: 'https://example.com/truffle-week', location: "Various Restaurants in Minato", date: "1-9 November 2025", time: "Varies by restaurant" },
+          { name: 'Christmas Market at Hibiya Park', description: 'Enjoy classic German-style Christmas food, hot wine, and festive decorations. (Dec 2025)', url: 'https://example.com/christmas-market', location: "Hibiya Park", date: "12-25 December 2025", time: "4:00pm - 10:00pm" },
+          { name: 'World Wagyu Expo', description: 'A massive celebration of Japanese beef, with tasting booths and cooking demonstrations. (Dec 2025)', url: 'https://example.com/wagyu-expo', location: "Tokyo Big Sight", date: "5-7 December 2025", time: "10:00am - 6:00pm" },
+          { name: 'Artisanal Mochi Pounding Festival', description: 'Join in the traditional new year preparations and taste freshly made mochi. (Dec 2025)', url: 'https://example.com/mochi-fest', location: "Asakusa Shrine", date: "28 December 2025", time: "11:00am - 2:00pm" },
+        ],
+        tours: [
+            {
+              title: "Tokyo: Shinjuku Food Tour (13 Dishes at 4 Local Eateries)",
+              location: "Tokyo",
+              tags: ["Early booking recommended"],
+              description: "This small group tour led by a local guide is a great way to discover hidden local dining spots t...",
+              duration: "3 hours",
+              reviews: { rating: 4.9, rating_text: "Exceptional", count: 400 },
+              features: { free_cancellation: true },
+              pricing: { currency: "USD", from_price: 90.00 },
+              availability: "Available starting Oct 1"
+            },
+            {
+              title: "Shinjuku Hidden Bar hopping 2 hours tour– 2 Stops, 3 Drinks",
+              location: "Tokyo",
+              tags: ["Early booking recommended"],
+              description: "Unlock the magic of Shinjuku’s nightlife in just two unforgettable hours!! Join a local guide and...",
+              duration: "2 hours",
+              reviews: { rating: 5.0, rating_text: "Exceptional", count: 1 },
+              features: { free_cancellation: true },
+              pricing: { currency: "USD", from_price: 104.00 },
+              availability: "Available starting Oct 1"
+            },
+            {
+              title: "Tokyo Tsukiji Fish Market Food and Culture Walking Tour",
+              location: "Tokyo",
+              tags: ["Early booking recommended"],
+              description: "Let’s explore Tsukiji, the vibrant market for the locals and the professional chefs for more than...",
+              duration: "3 hours",
+              reviews: { rating: 4.8, rating_text: "Exceptional", count: 344 },
+              features: { free_cancellation: true },
+              pricing: { currency: "USD", from_price: 104.00 },
+              availability: "Available starting Oct 1"
+            },
+            {
+              title: "Tokyo: Tsukiji Fish Market Food and Walking tour",
+              location: "Tokyo",
+              tags: ["Early booking recommended"],
+              description: "Explore the sights and tastes of the Outer Tsukiji Fish Market on a walking tour. Sample a variet...",
+              duration: "3 hours",
+              reviews: { rating: 4.9, rating_text: "Exceptional", count: 872 },
+              features: { free_cancellation: true },
+              pricing: { currency: "USD", from_price: 100.00 },
+              availability: "Available starting Oct 1"
+            }
         ]
       };
       setEventsResponse(mockEvents);
@@ -719,6 +765,7 @@ export default function Home() {
             <Button size="lg">Launch Immersive Experience</Button>
           </DialogTrigger>
           <DialogContent className="max-w-none w-[90vw] h-[90vh] p-0">
+              <DialogTitle className="sr-only">Immersive Trip Experience</DialogTitle>
               <iframe 
                   src="https://interstellar-demo-0003-wtyerc7rsa-uc.a.run.app/?seed=405&temperature=0.0" 
                   className="w-full h-full border-0 rounded-lg"
@@ -733,5 +780,7 @@ export default function Home() {
     
 
 
+
+    
 
     
