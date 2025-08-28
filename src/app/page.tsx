@@ -39,7 +39,7 @@ import type { GenerateItineraryOutput } from "@/ai/schemas/itinerary-schema";
 import type { GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
 import { ResultsDisplay } from "@/components/results-display";
 import { LoadingState } from "@/components/loading-state";
-import { Search, Youtube, Sparkles, Loader } from "lucide-react";
+import { Search, Youtube, Sparkles, Loader, Plane } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoResultDisplay } from "@/components/video-result-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
@@ -589,7 +589,7 @@ export default function Home() {
               className="w-full max-w-4xl mx-auto"
               onValueChange={handleTabChange}
             >
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="search">
                   <Search className="mr-2 h-4 w-4" />
                   Grounded Search
@@ -597,6 +597,10 @@ export default function Home() {
                 <TabsTrigger value="video">
                   <Youtube className="mr-2 h-4 w-4" />
                   Video & Itinerary Search
+                </TabsTrigger>
+                <TabsTrigger value="trip">
+                  <Plane className="mr-2 h-4 w-4" />
+                  Pre/Post Trip
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="search">
@@ -705,6 +709,31 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </TabsContent>
+              <TabsContent value="trip">
+                <Card className="w-full shadow-lg bg-background/90 backdrop-blur-sm">
+                  <CardContent className="p-6 text-center">
+                    <p className="text-muted-foreground mb-4">
+                      Access additional tools to help with your trip planning and post-trip activities.
+                    </p>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="lg">
+                            <Plane className="mr-2 h-5 w-5" />
+                            Launch Pre/Post Trip Tool
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-none w-[90vw] h-[90vh] p-0">
+                          <DialogTitle className="sr-only">Pre/Post Trip Tool</DialogTitle>
+                          <iframe 
+                              src="https://symbolgo-892801856301.us-central1.run.app/" 
+                              className="w-full h-full border-0 rounded-lg"
+                              allow="camera; microphone"
+                          />
+                      </DialogContent>
+                    </Dialog>
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </Tabs>
           </div>
         </div>
@@ -745,6 +774,12 @@ export default function Home() {
                 </h2>
               </Card>
             )
+          ) : activeTab === "trip" ? (
+             <Card className="text-center p-12 border-dashed flex items-center justify-center h-full max-w-4xl mx-auto">
+                <h2 className="text-xl font-medium text-muted-foreground">
+                    Launch the Pre/Post Trip tool to get started.
+                </h2>
+              </Card>
           ) : null}
           
           {isHotelLoading ? (
@@ -769,6 +804,7 @@ export default function Home() {
   );
 
     
+
 
 
 
