@@ -352,6 +352,8 @@ export default function Home() {
 
       const mockItinerary = [
         { day: 1, title: 'Tsukiji Market & Ginza Sushi', locations: [
+            { name: 'American Museum of Natural History', description: 'One of the largest natural history museums in the world, famous for its dinosaur exhibits and the Milstein Hall of Ocean Life.', address: '200 Central Park West, New York, NY 10024', imageUrl: 'https://placehold.co/600x400.png' },
+            { name: 'Tony\'s Di Napoli', description: 'A classic family-style Italian restaurant in the heart of the Theater District, known for its huge portions and a lively atmosphere.', address: '147 W 43rd St, New York, NY 10036', imageUrl: 'https://placehold.co/600x400.png' },
             { name: 'Tsukiji Outer Market', description: 'Explore a bustling market with the freshest seafood and local street food.', address: '4 Chome-16-2 Tsukiji, Chuo City, Tokyo 104-0045, Japan', imageUrl: 'https://placehold.co/600x400.png' },
             { name: 'Sushi Dai', description: 'Experience one of the most famous sushi breakfasts in the world, right near the market.', address: '6 Chome-5-1 Toyosu, Koto City, Tokyo 135-0061, Japan', imageUrl: 'https://placehold.co/600x400.png' },
             { name: 'Ginza Kyubey', description: 'Indulge in a high-end, traditional Edomae sushi dinner in the upscale Ginza district.', address: '8 Chome-7-6 Ginza, Chuo City, Tokyo 104-0061, Japan', imageUrl: 'https://placehold.co/600x400.png' }
@@ -405,7 +407,7 @@ export default function Home() {
           { name: 'The Peninsula Tokyo', address: '1-8-1 Yurakucho, Chiyoda-ku, Tokyo, 100-0006, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'Unparalleled luxury and service with a prime location overlooking the Imperial Palace gardens.' },
           { name: 'Mandarin Oriental, Tokyo', address: '2-1-1 Nihonbashi Muromachi, Chuo-ku, Tokyo, 103-8328, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A five-star hotel known for its sophisticated style and award-winning restaurants.' },
           { name: 'Trunk (Hotel) Yoyogi Park', address: '1-15-2 Tomigaya, Shibuya-ku, Tokyo, 151-0063, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A trendy hotel with a focus on local culture, featuring a rooftop pool with views of Yoyogi Park.' },
-          { name: 'InterContinental New York Barclay', address: '111 E 48th St, New York, NY 10017', imageUrl: 'https://placehold.co/600x400.png', description: 'A classic luxury hotel in the heart of Midtown Manhattan.' }
+          { name: 'InterContinental New York Times Square, an IHG Hotel', address: '300 W 44th St, New York, NY 10036', imageUrl: 'https://placehold.co/600x400.png', description: 'A luxury hotel in the heart of the Theater District.' }
 
         ]
       };
@@ -756,23 +758,7 @@ export default function Home() {
           {mapData && !isItineraryLoading && (
             <div className="pt-8 space-y-8">
               <MapDisplay data={mapData} itinerary={itineraryResponse?.itinerary} />
-              <div className="w-full text-center space-y-2 pt-4">
-                <h3 className="font-headline text-xl text-primary">Immersive Trip Experience</h3>
-                <p className="text-muted-foreground text-sm max-w-xs mx-auto">Step into a virtual world and experience your destination like never before.</p>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button>Launch Immersive Experience</Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-none w-[90vw] h-[90vh] p-0">
-                      <DialogTitle className="sr-only">Immersive Trip Experience</DialogTitle>
-                      <iframe 
-                          src="https://interstellar-demo-0003-wtyerc7rsa-uc.a.run.app/?seed=405&temperature=0.0" 
-                          className="w-full h-full border-0 rounded-lg"
-                          allow="camera; microphone"
-                      />
-                  </DialogContent>
-                </Dialog>
-              </div>
+              
             </div>
           )}
 
@@ -783,6 +769,7 @@ export default function Home() {
   );
 
     
+
 
 
 

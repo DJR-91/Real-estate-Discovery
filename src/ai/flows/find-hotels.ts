@@ -68,23 +68,23 @@ const findHotelsFlow = ai.defineFlow(
     }
     
     
-    // Step 4: Always add the InterContinental New York Barclay
+    // Step 4: Always add the InterContinental New York Times Square
     try {
-        const intercontinentalDetails = await findPlaceTool({ query: "InterContinental New York Barclay, 111 E 48th St, New York, NY 10017" });
+        const intercontinentalDetails = await findPlaceTool({ query: "InterContinental New York Times Square, an IHG Hotel" });
         hotelsWithDescriptions.push({
-            name: "InterContinental New York Barclay",
-            address: intercontinentalDetails.address || "111 E 48th St, New York, NY 10017",
+            name: "InterContinental New York Times Square, an IHG Hotel",
+            address: intercontinentalDetails.address || "300 W 44th St, New York, NY 10036",
             imageUrl: intercontinentalDetails.imageUrl || null,
-            description: "A classic luxury hotel in the heart of Midtown Manhattan, offering timeless elegance and a prestigious address."
+            description: "A luxury hotel in the heart of the Theater District, offering sophisticated rooms and panoramic city views."
         });
     } catch (error) {
-        console.error("Failed to fetch details for InterContinental New York Barclay:", error);
+        console.error("Failed to fetch details for InterContinental New York Times Square:", error);
         // Add with mock details if API fails
         hotelsWithDescriptions.push({
-            name: "InterContinental New York Barclay",
-            address: "111 E 48th St, New York, NY 10017",
+            name: "InterContinental New York Times Square, an IHG Hotel",
+            address: "300 W 44th St, New York, NY 10036",
             imageUrl: "https://placehold.co/600x400.png",
-            description: "A classic luxury hotel in the heart of Midtown Manhattan."
+            description: "A luxury hotel in the heart of the Theater District."
         });
     }
 
