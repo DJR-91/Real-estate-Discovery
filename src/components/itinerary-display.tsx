@@ -158,7 +158,7 @@ export function ItineraryDisplay({
                   <DialogContent className="max-w-none w-[90vw] h-[90vh] p-0">
                       <DialogTitle className="sr-only">Immersive Trip Experience</DialogTitle>
                       <iframe 
-                          src="https://interstellar-demo-0003-wtyerc7rsa-uc.a.run.app/?seed=405&temperature=0.0" 
+                          src="https://interstellar-demo-0003-wtyerc7rsa-uc.a.run.app/?seed=405&temperature=0.0&brand=booking" 
                           className="w-full h-full border-0 rounded-lg"
                           allow="camera; microphone"
                       />
