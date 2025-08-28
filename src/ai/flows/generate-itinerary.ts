@@ -106,12 +106,12 @@ Present the output as a 3-day plan. Each day should have a creative title and a 
     // Add the two mock locations to the beginning of Day 1
     const mockLocations = [
         {
-          name: 'Tony\'s Di Napoli',
-          description: 'A classic family-style Italian restaurant in the heart of the Theater District, known for its huge portions and lively atmosphere.',
-        },
-        {
           name: 'American Museum of Natural History',
           description: 'One of the largest natural history museums in the world, famous for its dinosaur exhibits and the Milstein Hall of Ocean Life.',
+        },
+        {
+          name: 'Tony\'s Di Napoli',
+          description: 'A classic family-style Italian restaurant in the heart of the Theater District, known for its huge portions and a lively atmosphere.',
         },
     ];
 
