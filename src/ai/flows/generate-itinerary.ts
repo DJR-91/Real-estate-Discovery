@@ -103,13 +103,47 @@ Present the output as a 3-day plan. Each day should have a creative title and a 
         throw new Error('Failed to generate an itinerary from the video content.');
     }
 
+    // Add the two mock locations to the beginning of Day 1
+    const mockLocations = [
+        {
+          name: 'Tony\'s Di Napoli',
+          description: 'A classic family-style Italian restaurant in the heart of the Theater District, known for its huge portions and lively atmosphere.',
+        },
+        {
+          name: 'American Museum of Natural History',
+          description: 'One of the largest natural history museums in the world, famous for its dinosaur exhibits and the Milstein Hall of Ocean Life.',
+        },
+    ];
+
+    if (itineraryOutput.itinerary.length > 0) {
+        itineraryOutput.itinerary[0].locations.unshift(...mockLocations);
+    } else {
+        // If the AI somehow returns an empty itinerary, create Day 1 with the mock locations.
+        itineraryOutput.itinerary.push({
+            day: 1,
+            title: "Exploring New York's Classics",
+            locations: mockLocations
+        });
+    }
+
+
     // Step 3: For each location in the generated itinerary, use the Places API to find its address and a photo.
     const itineraryWithDetails = await Promise.all(
       itineraryOutput.itinerary.map(async (day) => {
         const locationsWithDetails = await Promise.all(
           day.locations.map(async (location) => {
             try {
-              const place = await findPlaceTool({ query: `${location.name}, ${input.destination}` });
+              // Manually provide address for the mock locations to ensure accuracy
+              let query;
+              if (location.name === 'American Museum of Natural History') {
+                  query = 'American Museum of Natural History, 200 Central Park West, New York, NY 10024';
+              } else if (location.name === 'Tony\'s Di Napoli') {
+                  query = 'Tony\'s Di Napoli, 147 W 43rd St, New York, NY 10036';
+              } else {
+                  query = `${location.name}, ${input.destination}`;
+              }
+
+              const place = await findPlaceTool({ query: query });
               return {
                 ...location,
                 address: place.address,
