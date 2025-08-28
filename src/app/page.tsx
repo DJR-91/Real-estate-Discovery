@@ -54,7 +54,7 @@ import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { EventsDisplay } from "@/components/events-display";
 import { useLiveStore } from "@/store/live-store";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import Link from "next/link";
 
 
 const groundedSearchSchema = z.object({
@@ -407,7 +407,7 @@ export default function Home() {
           { name: 'The Peninsula Tokyo', address: '1-8-1 Yurakucho, Chiyoda-ku, Tokyo, 100-0006, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'Unparalleled luxury and service with a prime location overlooking the Imperial Palace gardens.' },
           { name: 'Mandarin Oriental, Tokyo', address: '2-1-1 Nihonbashi Muromachi, Chuo-ku, Tokyo, 103-8328, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A five-star hotel known for its sophisticated style and award-winning restaurants.' },
           { name: 'Trunk (Hotel) Yoyogi Park', address: '1-15-2 Tomigaya, Shibuya-ku, Tokyo, 151-0063, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A trendy hotel with a focus on local culture, featuring a rooftop pool with views of Yoyogi Park.' },
-          { name: 'InterContinental New York Barclay by IHG', address: '111 E 48th St, New York, NY 10017', imageUrl: 'https://placehold.co/600x400.png', description: 'An iconic luxury hotel in Midtown East.' }
+          { name: 'InterContinental New York Barclay by IHG', address: '111 E 48th St, New York, NY 10017', imageUrl: 'https://placehold.co/600x400.png', description: 'An iconic luxury hotel in Midtown East, known for its grand Federalist style and sophisticated elegance.' }
 
         ]
       };
@@ -715,22 +715,14 @@ export default function Home() {
                     <p className="text-muted-foreground mb-4">
                       Access additional tools to help with your trip planning and post-trip activities.
                     </p>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button size="lg">
+                    <Link href="https://symbolgo-892801856301.us-central1.run.app/" target="_blank" rel="noopener noreferrer">
+                      <Button size="lg" asChild>
+                        <span>
                             <Plane className="mr-2 h-5 w-5" />
                             Launch Pre/Post Trip Tool
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-none w-[90vw] h-[90vh] p-0">
-                          <DialogTitle className="sr-only">Pre/Post Trip Tool</DialogTitle>
-                          <iframe 
-                              src="https://symbolgo-892801856301.us-central1.run.app/" 
-                              className="w-full h-full border-0 rounded-lg"
-                              allow="camera; microphone"
-                          />
-                      </DialogContent>
-                    </Dialog>
+                        </span>
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -804,6 +796,7 @@ export default function Home() {
   );
 
     
+
 
 
 
