@@ -35,33 +35,38 @@ const findHotelsFlow = ai.defineFlow(
     });
 
     if (hotelResults.length === 0) {
-      throw new Error(`Could not find any hotels near the specified location.`);
+      // Even if no hotels are found nearby, we can still return the InterContinental
+      console.warn(`Could not find any hotels near the specified location.`);
     }
 
     // Step 2: Use Gemini to generate a description for each of the found hotels
-    const llmResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-lite',
-      output: {
-        schema: z.object({
-          hotels: z.array(z.object({ description: z.string() }))
-        })
-      },
-      prompt: `You are a travel assistant. For each of the following hotels, write a short, engaging, one-sentence description for a tourist.
-        Focus on a key feature like its location, style, or a notable amenity.
-        
-        Hotels:
-        ${hotelResults.map(h => `- ${h.name} at ${h.address}`).join('\n')}
-        `,
-    });
-
-    // Step 3: Combine the hotel details with the generated descriptions
-    let hotelsWithDescriptions = llmResponse.output?.hotels.map((hotel, index) => {
-        const originalHotel = hotelResults[index];
-        return {
-            ...originalHotel,
-            description: hotel.description,
-        };
-    }) || hotelResults;
+    let hotelsWithDescriptions = [];
+    if (hotelResults.length > 0) {
+        const llmResponse = await ai.generate({
+          model: 'googleai/gemini-2.5-flash-lite',
+          output: {
+            schema: z.object({
+              hotels: z.array(z.object({ description: z.string() }))
+            })
+          },
+          prompt: `You are a travel assistant. For each of the following hotels, write a short, engaging, one-sentence description for a tourist.
+            Focus on a key feature like its location, style, or a notable amenity.
+            
+            Hotels:
+            ${hotelResults.map(h => `- ${h.name} at ${h.address}`).join('\n')}
+            `,
+        });
+    
+        // Step 3: Combine the hotel details with the generated descriptions
+        hotelsWithDescriptions = llmResponse.output?.hotels.map((hotel, index) => {
+            const originalHotel = hotelResults[index];
+            return {
+                ...originalHotel,
+                description: hotel.description,
+            };
+        }) || hotelResults;
+    }
+    
     
     // Step 4: Always add the InterContinental New York Barclay
     try {
@@ -85,7 +90,7 @@ const findHotelsFlow = ai.defineFlow(
 
 
     return {
-      hotels: hotelsWithDescriptions.slice(0,6),
+      hotels: hotelsWithDescriptions.slice(0,7),
     };
   }
 );
