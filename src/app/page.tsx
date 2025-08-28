@@ -407,7 +407,7 @@ export default function Home() {
           { name: 'The Peninsula Tokyo', address: '1-8-1 Yurakucho, Chiyoda-ku, Tokyo, 100-0006, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'Unparalleled luxury and service with a prime location overlooking the Imperial Palace gardens.' },
           { name: 'Mandarin Oriental, Tokyo', address: '2-1-1 Nihonbashi Muromachi, Chuo-ku, Tokyo, 103-8328, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A five-star hotel known for its sophisticated style and award-winning restaurants.' },
           { name: 'Trunk (Hotel) Yoyogi Park', address: '1-15-2 Tomigaya, Shibuya-ku, Tokyo, 151-0063, Japan', imageUrl: 'https://placehold.co/600x400.png', description: 'A trendy hotel with a focus on local culture, featuring a rooftop pool with views of Yoyogi Park.' },
-          { name: 'InterContinental New York Times Square, an IHG Hotel', address: '300 W 44th St, New York, NY 10036', imageUrl: 'https://placehold.co/600x400.png', description: 'A luxury hotel in the heart of the Theater District.' }
+          { name: 'InterContinental New York Barclay by IHG', address: '111 E 48th St, New York, NY 10017', imageUrl: 'https://placehold.co/600x400.png', description: 'An iconic luxury hotel in Midtown East.' }
 
         ]
       };
@@ -529,7 +529,7 @@ export default function Home() {
               availability: "Available starting Oct 1"
             },
             {
-              title: "Tokyo: Tsukiji Fish Market Food and Walking tour",
+              title: "Tokyo: Tsukiji Fish Market Food and walking tour",
               location: "Tokyo",
               tags: ["Early booking recommended"],
               description: "Explore the sights and tastes of the Outer Tsukiji Fish Market on a walking tour. Sample a variet...",
@@ -769,6 +769,7 @@ export default function Home() {
   );
 
     
+
 
 
 
