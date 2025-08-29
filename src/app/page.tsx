@@ -288,7 +288,7 @@ export default function Home() {
     try {
       const itineraryResult = await generateItinerary(itineraryInput);
       
-      const newItineraryData = {
+      const newItineraryData: ItineraryData = {
         video: video,
         itinerary: itineraryResult.itinerary,
         videoSummary: itineraryResult.videoSummary,
@@ -555,7 +555,7 @@ export default function Home() {
       <div
         className="w-full relative bg-cover bg-center"
         style={{
-          backgroundImage: "url('https://storage.cloud.google.com/jfk-files/background.jpeg?authuser=3')",
+          backgroundImage: "url('https://storage.cloud.google.com/jfk-files/background.jpeg?authuser=1')",
         }}
       >
         <div className="relative z-10 bg-black/50">
@@ -789,3 +789,6 @@ export default function Home() {
 
 
 
+
+
+    
