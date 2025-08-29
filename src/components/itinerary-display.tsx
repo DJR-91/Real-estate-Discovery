@@ -17,7 +17,6 @@ import { Building, MapPin, Utensils, FerrisWheel, Hotel, Loader, PartyPopper, Ey
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
-import { WeatherDisplay } from "./weather-display";
 import type { PointOfInterest } from "@/ai/schemas/grounded-response-schema";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "./ui/dialog";
 
@@ -64,7 +63,7 @@ export function ItineraryDisplay({
     isEventsLoading,
     onSelectLocation,
 }: ItineraryDisplayProps) {
-  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint, weather, isWeatherLoading } = data;
+  const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint } = data;
 
   const audioUrl = "https://storage.cloud.google.com/jfk-files/outbound.wav?authuser=3";
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
@@ -132,7 +131,6 @@ export function ItineraryDisplay({
                 </a>
               </CardDescription>
             </div>
-            <WeatherDisplay weather={weather} isLoading={isWeatherLoading} />
           </div>
         </CardHeader>
         <CardContent>

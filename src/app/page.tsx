@@ -50,7 +50,6 @@ import type { FindHotelsOutput, Hotel } from "@/ai/schemas/hotel-schema";
 import { HotelDisplay } from "@/components/hotel-display";
 import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
 import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
-import { getWeather } from "@/ai/flows/get-weather";
 import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { EventsDisplay } from "@/components/events-display";
 import { useLiveStore } from "@/store/live-store";
@@ -180,20 +179,6 @@ export default function Home() {
     }
   }
 
-  const handleFetchWeather = async (location: string) => {
-    setIsWeatherLoading(true);
-    setWeatherResponse(null);
-    try {
-      const weatherResult = await getWeather({ location });
-      setItineraryResponse(prev => prev ? { ...prev, weather: weatherResult, isWeatherLoading: false } : null);
-    } catch (error) {
-      console.error("Failed to fetch weather:", error);
-      setItineraryResponse(prev => prev ? { ...prev, isWeatherLoading: false } : null);
-    } finally {
-      setIsWeatherLoading(false);
-    }
-  }
-
   async function onVideoSearchSubmit(values: z.infer<typeof videoSearchSchema>) {
     setIsLoading(true);
     setGroundedResponse(null);
@@ -309,11 +294,10 @@ export default function Home() {
         videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
         isBannerLoading: true,
-        isWeatherLoading: true,
+        isWeatherLoading: false,
+        weather: null,
       };
       setItineraryResponse(newItineraryData);
-
-      handleFetchWeather(videoSearchValues.destination);
 
       // Find the first location with a valid address to show on the map.
       let mapLocationFound = false;
@@ -379,6 +363,7 @@ export default function Home() {
         bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3',
         bannerAiHint: 'tokyo tower',
         isWeatherLoading: false,
+        weather: null,
       });
       
       toast({
@@ -796,6 +781,7 @@ export default function Home() {
   );
 
     
+
 
 
 
