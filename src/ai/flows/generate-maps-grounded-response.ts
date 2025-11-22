@@ -60,16 +60,8 @@ const generateMapsGroundedResponseFlow = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash-lite',
       prompt: input.query,
       config: {
-        tools: [{ googleMaps: {} }],
-        toolConfig: input.location ? {
-            retrievalConfig: {
-                latLng: {
-                    latitude: input.location.latitude,
-                    longitude: input.location.longitude,
-                },
-            },
-        } : undefined,
-      }
+        tools: [{ google_maps: {} }],
+      },
     });
 
     const rawTextResponse = llmResponse.text;
