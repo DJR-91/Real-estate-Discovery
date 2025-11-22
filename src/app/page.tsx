@@ -29,6 +29,9 @@ import {
   generateGroundedResponse,
 } from "@/ai/flows/generate-grounded-response";
 import {
+  generateMapsGroundedResponse
+} from "@/ai/flows/generate-maps-grounded-response";
+import {
   searchYoutubeVideos,
 } from "@/ai/flows/search-youtube-videos";
 import { generateItinerary } from "@/ai/flows/generate-itinerary";
@@ -39,7 +42,7 @@ import type { GenerateItineraryOutput } from "@/ai/schemas/itinerary-schema";
 import type { GenerateItineraryInput } from "@/ai/schemas/itinerary-schema";
 import { ResultsDisplay } from "@/components/results-display";
 import { LoadingState } from "@/components/loading-state";
-import { Search, Youtube, Sparkles, Loader, Plane } from "lucide-react";
+import { Search, Youtube, Sparkles, Loader, Plane, Map } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VideoResultDisplay } from "@/components/video-result-display";
 import { ItineraryDisplay } from "@/components/itinerary-display";
@@ -61,6 +64,14 @@ const groundedSearchSchema = z.object({
     message: "Query must be at least 2 characters.",
   }),
 });
+
+const mapsGroundedSearchSchema = z.object({
+  query: z.string().min(2, {
+    message: "Query must be at least 2 characters.",
+  }),
+  location: z.string().optional(),
+});
+
 
 const videoSearchSchema = z.object({
   destination: z.string().min(2, {
@@ -129,6 +140,14 @@ export default function Home() {
     },
   });
 
+  const mapsGroundedSearchForm = useForm<z.infer<typeof mapsGroundedSearchSchema>>({
+    resolver: zodResolver(mapsGroundedSearchSchema),
+    defaultValues: {
+      query: "",
+      location: "",
+    },
+  });
+
   const videoSearchForm = useForm<z.infer<typeof videoSearchSchema>>({
     resolver: zodResolver(videoSearchSchema),
     defaultValues: {
@@ -179,6 +198,65 @@ export default function Home() {
     }
   }
 
+  const geocodeAddress = (address: string): Promise<google.maps.LatLngLiteral> => {
+    return new Promise((resolve, reject) => {
+        if (!window.google || !window.google.maps) {
+            return reject(new Error("Google Maps API not loaded."));
+        }
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address }, (results, status) => {
+            if (status === "OK" && results && results[0]) {
+                const location = results[0].geometry.location;
+                resolve({ lat: location.lat(), lng: location.lng() });
+            } else {
+                reject(new Error(`Geocode was not successful for the following reason: ${status}`));
+            }
+        });
+    });
+  };
+
+  async function onMapsGroundedSearchSubmit(
+    values: z.infer<typeof mapsGroundedSearchSchema>
+  ) {
+    setIsLoading(true);
+    setGroundedResponse(null);
+    setVideoResponse(null);
+    setItineraryResponse(null);
+    setHotelResponse(null);
+    setEventsResponse(null);
+    setWeatherResponse(null);
+    setMapData(null);
+    try {
+      let locationCoords: google.maps.LatLngLiteral | undefined = undefined;
+      if (values.location) {
+        try {
+          locationCoords = await geocodeAddress(values.location);
+        } catch (e) {
+          console.warn("Could not geocode location, proceeding without it.", e);
+          toast({
+            variant: "default",
+            title: "Location Not Found",
+            description: `Could not find "${values.location}" on the map. Performing a general search instead.`,
+          });
+        }
+      }
+
+      const result = await generateMapsGroundedResponse({ query: values.query, location: locationCoords });
+      setGroundedResponse(result);
+
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "An error occurred",
+        description: "Failed to get a response from Gemini Maps. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+
   async function onVideoSearchSubmit(values: z.infer<typeof videoSearchSchema>) {
     setIsLoading(true);
     setGroundedResponse(null);
@@ -206,23 +284,6 @@ export default function Home() {
       setIsLoading(false);
     }
   }
-  
-  const geocodeAddress = (address: string): Promise<google.maps.LatLngLiteral> => {
-    return new Promise((resolve, reject) => {
-        if (!window.google || !window.google.maps) {
-            return reject(new Error("Google Maps API not loaded."));
-        }
-        const geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ address }, (results, status) => {
-            if (status === "OK" && results && results[0]) {
-                const location = results[0].geometry.location;
-                resolve({ lat: location.lat(), lng: location.lng() });
-            } else {
-                reject(new Error(`Geocode was not successful for the following reason: ${status}`));
-            }
-        });
-    });
-  };
   
   const handleMapLocationSelect = async (place: PointOfInterest) => {
     if (!place.address || place.address === "Address not available") {
@@ -294,7 +355,7 @@ export default function Home() {
         videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
         isBannerLoading: true,
-        isWeatherLoading: false,
+        isWeatherLoading: true,
         weather: null,
       };
       setItineraryResponse(newItineraryData);
@@ -574,14 +635,18 @@ export default function Home() {
               className="w-full max-w-4xl mx-auto"
               onValueChange={handleTabChange}
             >
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="search">
                   <Search className="mr-2 h-4 w-4" />
                   Grounded Search
                 </TabsTrigger>
+                <TabsTrigger value="maps-search">
+                  <Map className="mr-2 h-4 w-4" />
+                  Grounded Maps
+                </TabsTrigger>
                 <TabsTrigger value="video">
                   <Youtube className="mr-2 h-4 w-4" />
-                  Video & Itinerary Search
+                  Video & Itinerary
                 </TabsTrigger>
                 <TabsTrigger value="trip">
                   <Plane className="mr-2 h-4 w-4" />
@@ -625,7 +690,63 @@ export default function Home() {
                           ) : (
                             <Sparkles className="mr-2 h-5 w-5" />
                           )}
-                          AI Mode
+                          Search
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+               <TabsContent value="maps-search">
+                <Card className="w-full shadow-lg bg-background/90 backdrop-blur-sm">
+                  <CardContent className="p-6">
+                    <p className="text-center text-muted-foreground mb-4">
+                      Find places with location-aware search, grounded in Google Maps data.
+                    </p>
+                    <Form {...mapsGroundedSearchForm}>
+                      <form
+                        onSubmit={mapsGroundedSearchForm.handleSubmit(onMapsGroundedSearchSubmit)}
+                        className="flex flex-col sm:flex-row items-start gap-4"
+                      >
+                        <FormField
+                          control={mapsGroundedSearchForm.control}
+                          name="query"
+                          render={({ field }) => (
+                            <FormItem className="flex-grow w-full">
+                              <FormControl>
+                                <Input
+                                  placeholder="e.g., 'best coffee shops near me'"
+                                  {...field}
+                                  className="text-base"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={mapsGroundedSearchForm.control}
+                          name="location"
+                          render={({ field }) => (
+                            <FormItem className="flex-grow w-full">
+                              <FormControl>
+                                <Input
+                                  placeholder="Location (e.g., 'Paris, France')"
+                                  {...field}
+                                  className="text-base"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <Button type="submit" disabled={isLoading} size="lg" className="w-full sm:w-auto">
+                          {isLoading ? (
+                            <Loader className="mr-2 h-5 w-5 animate-spin" />
+                          ) : (
+                            <Map className="mr-2 h-5 w-5" />
+                          )}
+                          Search Maps
                         </Button>
                       </form>
                     </Form>
@@ -701,11 +822,9 @@ export default function Home() {
                       Access additional tools to help with your trip planning and post-trip activities.
                     </p>
                     <Link href="https://symbolgo-892801856301.us-central1.run.app/" target="_blank" rel="noopener noreferrer">
-                      <Button size="lg" asChild>
-                        <span>
-                            <Plane className="mr-2 h-5 w-5" />
-                            Launch Pre/Post Trip Tool
-                        </span>
+                      <Button size="lg">
+                          <Plane className="mr-2 h-5 w-5" />
+                          Launch Pre/Post Trip Tool
                       </Button>
                     </Link>
                   </CardContent>
@@ -720,7 +839,7 @@ export default function Home() {
         <div className="w-full min-h-[20rem] space-y-8">
           {isLoading || isItineraryLoading ? (
             <LoadingState />
-          ) : activeTab === "search" ? (
+          ) : activeTab === "search" || activeTab === "maps-search" ? (
             groundedResponse ? (
               <ResultsDisplay data={groundedResponse} />
             ) : (
@@ -790,5 +909,7 @@ export default function Home() {
 
 
 
+
+    
 
     
