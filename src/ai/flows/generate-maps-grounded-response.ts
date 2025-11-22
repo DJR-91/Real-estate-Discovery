@@ -13,7 +13,6 @@ import { ai } from '@/ai/genkit';
 import {
   GenerateGroundedResponseInputSchema,
   GenerateGroundedResponseOutputSchema,
-  type GenerateGroundedResponseInput,
   type GenerateGroundedResponseOutput,
 } from '@/ai/schemas/grounded-response-schema';
 import { findPlaceTool } from '@/services/google-maps';
@@ -60,15 +59,17 @@ const generateMapsGroundedResponseFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.5-flash-lite',
       prompt: input.query,
-      tools: [{ google_maps: {} }],
-      toolConfig: input.location ? {
-          retrievalConfig: {
-              latLng: {
-                  latitude: input.location.latitude,
-                  longitude: input.location.longitude,
-              },
-          },
-      } : undefined,
+      config: {
+        tools: [{ googleMaps: {} }],
+        toolConfig: input.location ? {
+            retrievalConfig: {
+                latLng: {
+                    latitude: input.location.latitude,
+                    longitude: input.location.longitude,
+                },
+            },
+        } : undefined,
+      }
     });
 
     const rawTextResponse = llmResponse.text;
@@ -128,5 +129,3 @@ const generateMapsGroundedResponseFlow = ai.defineFlow(
     };
   }
 );
-
-    
