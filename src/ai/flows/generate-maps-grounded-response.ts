@@ -60,17 +60,15 @@ const generateMapsGroundedResponseFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.5-flash-lite',
       prompt: input.query,
-      config: {
-        tools: [{ googleMaps: {} }],
-        toolConfig: input.location ? {
-            retrievalConfig: {
-                latLng: {
-                    latitude: input.location.latitude,
-                    longitude: input.location.longitude,
-                },
-            },
-        } : undefined,
-      },
+      tools: [{ googleMaps: {} }],
+      toolConfig: input.location ? {
+          retrievalConfig: {
+              latLng: {
+                  latitude: input.location.latitude,
+                  longitude: input.location.longitude,
+              },
+          },
+      } : undefined,
     });
 
     const rawTextResponse = llmResponse.text;
