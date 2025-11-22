@@ -53,7 +53,6 @@ import type { FindHotelsOutput, Hotel } from "@/ai/schemas/hotel-schema";
 import { HotelDisplay } from "@/components/hotel-display";
 import { findTrendyEvents } from "@/ai/flows/find-trendy-events";
 import type { FindTrendyEventsOutput } from "@/ai/schemas/event-schema";
-import type { GetWeatherOutput } from "@/ai/schemas/weather-schema";
 import { EventsDisplay } from "@/components/events-display";
 import { useLiveStore } from "@/store/live-store";
 import Link from "next/link";
@@ -90,8 +89,6 @@ export interface ItineraryData {
   bannerUrl?: string;
   isBannerLoading: boolean;
   bannerAiHint?: string;
-  weather?: GetWeatherOutput | null;
-  isWeatherLoading: boolean;
 }
 
 export type MapData = {
@@ -123,13 +120,11 @@ export default function Home() {
     useState<ItineraryData | null>(null);
   const [hotelResponse, setHotelResponse] = useState<FindHotelsOutput | null>(null);
   const [eventsResponse, setEventsResponse] = useState<FindTrendyEventsOutput | null>(null);
-  const [weatherResponse, setWeatherResponse] = useState<GetWeatherOutput | null>(null);
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isItineraryLoading, setIsItineraryLoading] = useState(false);
   const [isHotelLoading, setIsHotelLoading] = useState(false);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
-  const [isWeatherLoading, setIsWeatherLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("search");
   const { toast } = useToast();
 
@@ -181,7 +176,6 @@ export default function Home() {
     setItineraryResponse(null);
     setHotelResponse(null);
     setEventsResponse(null);
-    setWeatherResponse(null);
     setMapData(null);
     try {
       const result = await generateGroundedResponse({ query: values.query });
@@ -224,13 +218,13 @@ export default function Home() {
     setItineraryResponse(null);
     setHotelResponse(null);
     setEventsResponse(null);
-    setWeatherResponse(null);
     setMapData(null);
     try {
-      let locationCoords: google.maps.LatLngLiteral | undefined = undefined;
+      let locationCoords: { latitude: number; longitude: number; } | undefined = undefined;
       if (values.location) {
         try {
-          locationCoords = await geocodeAddress(values.location);
+          const geocoded = await geocodeAddress(values.location);
+          locationCoords = { latitude: geocoded.lat, longitude: geocoded.lng };
         } catch (e) {
           console.warn("Could not geocode location, proceeding without it.", e);
           toast({
@@ -264,7 +258,6 @@ export default function Home() {
     setItineraryResponse(null);
     setHotelResponse(null);
     setEventsResponse(null);
-    setWeatherResponse(null);
     setMapData(null);
     try {
       const videoResult = await searchYoutubeVideos({
@@ -331,7 +324,6 @@ export default function Home() {
     setHotelResponse(null);
     setEventsResponse(null);
     setMapData(null);
-    setWeatherResponse(null);
 
     const itineraryInput: GenerateItineraryInput = {
       videoId: video.id,
@@ -355,8 +347,6 @@ export default function Home() {
         videoSummary: itineraryResult.videoSummary,
         destination: videoSearchValues.destination,
         isBannerLoading: true,
-        isWeatherLoading: true,
-        weather: null,
       };
       setItineraryResponse(newItineraryData);
 
@@ -423,8 +413,6 @@ export default function Home() {
         isBannerLoading: false,
         bannerUrl: 'https://storage.cloud.google.com/jfk-files/mockbanner.png?authuser=3',
         bannerAiHint: 'tokyo tower',
-        isWeatherLoading: false,
-        weather: null,
       });
       
       toast({
@@ -600,13 +588,11 @@ export default function Home() {
     setItineraryResponse(null);
     setHotelResponse(null);
     setEventsResponse(null);
-    setWeatherResponse(null);
     setMapData(null);
     setIsLoading(false);
     setIsItineraryLoading(false);
     setIsHotelLoading(false);
     setIsEventsLoading(false);
-    setIsWeatherLoading(false);
     groundedSearchForm.reset();
     videoSearchForm.reset();
   };
@@ -909,6 +895,8 @@ export default function Home() {
 
 
 
+
+    
 
     
 
