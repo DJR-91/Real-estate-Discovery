@@ -55,10 +55,16 @@ const generateMapsGroundedResponseFlow = ai.defineFlow(
     outputSchema: GenerateGroundedResponseOutputSchema,
   },
   async (input) => {
+    // If location is provided, append it to the query to make the search location-aware.
+    let fullQuery = input.query;
+    if (input.location) {
+        fullQuery = `${input.query} near ${input.location.latitude}, ${input.location.longitude}`;
+    }
+    
     // Step 1: Get the initial grounded response from Gemini using the Google Maps tool.
     const llmResponse = await ai.generate({
       model: 'googleai/gemini-2.5-flash-lite',
-      prompt: input.query,
+      prompt: fullQuery,
       config: {
         tools: [{ google_maps: {} }],
       },
