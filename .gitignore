@@ -43,3 +43,10 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# custom exclusions
+tsc_output_v*.txt
+tsc_output.txt
+react-next25-demo-interstellar/
+.agents/
+scratch/

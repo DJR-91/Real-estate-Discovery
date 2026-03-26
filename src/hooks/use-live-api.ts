@@ -1,16 +1,17 @@
-
 'use client';
 
 import { useCallback, useRef, useEffect } from 'react';
-import { GoogleGenAI, LiveSession, Part } from '@google/genai';
+import { GoogleGenAI, Session as LiveSession, Part } from '@google/genai/web';
 import { AudioStreamer } from '@/lib/audio-streamer';
 import { audioContext, base64ToArrayBuffer } from '@/lib/utils';
 import type { ItineraryData } from '@/app/page';
 import { useLiveStore } from '@/store/live-store';
 import { generateLocationDescription } from '@/ai/flows/generate-location-description';
+import { AudioRecorder } from '@/utils/audio-recorder';
 
 export function useLiveAPI() {
   const audioStreamerRef = useRef<AudioStreamer | null>(null);
+  const audioRecorderRef = useRef<AudioRecorder | null>(null);
 
   // Get state and actions from the Zustand store
   const {
@@ -45,27 +46,16 @@ export function useLiveAPI() {
     
     const location = allLocations[index];
     
-    try {
-        const { description } = await generateLocationDescription({ locationName: `${location.name}, ${data.destination}` });
-        
-        if (index === 0) {
-            // Create a summary of the 3-day itinerary
-            const itinerarySummary = data.itinerary.map(day => 
-                `Day ${day.day}, themed "${day.title}", will take you to locations like ${day.locations.map(l => l.name).join(', ')}.`
-            ).join(' ');
+    const locationDescription = location.description;
+    if (index === 0) {
+        // Create a summary of the 3-day itinerary
+        const itinerarySummary = data.itinerary.map(day => 
+            `Day ${day.day}, themed "${day.title}", will take you to locations like ${day.locations.map(l => l.name).join(', ')}.`
+        ).join(' ');
 
-            return `Welcome back, Andy, and thank you for being a genius level 1 customer! We understand your travel budget preferences and have tailored these recommendations based on your travel history. I'm your expert tour guide for ${data.destination}, and I'm here to provide a preview of your exciting trip. Here's a quick look at your 3-day plan: ${itinerarySummary} Now, let's start our tour. Our first stop is ${location.name}. ${description}. Let me know when you're ready for the next stop.`;
-        }
-        return `Next up is ${location.name}. ${description}. What's next on your mind?`;
-
-    } catch (e) {
-        console.error("Failed to generate location description:", e);
-        // Fallback to the original description if the flow fails
-        if (index === 0) {
-            return `Let's start the tour of your itinerary for ${data.destination}. The first stop is ${location.name}. Here's a little about it: ${location.description}. Let me know when you're ready for the next stop.`;
-        }
-        return `Next up is ${location.name}. ${location.description}. What's next on your mind?`;
+        return `Welcome back, Andy, and thank you for being a genius level 1 customer! We understand your travel preferences and have tailored these recommendations. I'm your expert tour guide for ${data.destination}. Here's a quick look at your 3-day plan: ${itinerarySummary} Now, let's start our tour. Our first stop is ${location.name}. ${locationDescription}. Let me know when you're ready for the next stop.`;
     }
+    return `Next up is ${location.name}. ${locationDescription}. What's next on your mind?`;
   }, []);
 
   const processUserCommand = useCallback(async (command: string) => {
@@ -123,41 +113,126 @@ export function useLiveAPI() {
       });
       setStream(userMediaStream);
       
-      const genAI = new GoogleGenAI({ apiKey });
 
       let initialContent: Part[] | undefined = undefined;
+      let systemPromptContent: any = undefined;
       if (data) {
         startTour(data);
         const welcomePrompt = await getTourPrompt(0, data);
         if (welcomePrompt) {
-          const systemPrompt = `You are a friendly and expert tour guide for a user named Andy. Your goal is to lead him on a virtual tour of his upcoming trip to ${data.destination}. Wait for him to say "next" or "continue" before proceeding to the next location. You must follow the instructions and speak the introductory message provided below.`;
+          const systemPrompt = `You are a friendly and expert tour guide for a user named Andy. Your goal is to lead him on a virtual tour of his upcoming trip to ${data.destination}. You have access to tools to control the 3D map.
+          
+1. If he says "next" or "continue", call "goToNextLocation".
+2. Whenever you discuss a specific tourist attraction or point of interest from the itinerary (e.g., the first stop, lunch spot, museums), you MUST call "viewOnMap" passing the name of the attraction. Do this IMMEDIATELY as you start talking about it so the map syncs with your voice.
+
+Do NOT just say "Okay" or acknowledge textually. Respond naturally and drive the map! Speak the introductory message provided below.`;
+          systemPromptContent = { parts: [{ text: systemPrompt }] };
           initialContent = [
-            {text: systemPrompt},
             {text: welcomePrompt}
           ];
         }
       }
       
+      const genAI = new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
+
       const newSession = await genAI.live.connect({
-        model: 'gemini-live-2.5-flash-preview',
+        model: 'gemini-2.5-flash-native-audio-latest',
         config: {
-          audio: {input: {encoding: 'LINEAR16', sampleRateHertz: 16000}, output: {encoding: 'LINEAR16', sampleRateHertz: 24000}},
-          video: {input: {encoding: 'H264'}},
-          text: {},
+          systemInstruction: systemPromptContent,
+          responseModalities: ["AUDIO" as any],
+          tools: [{
+            functionDeclarations: [
+              {
+                name: 'goToNextLocation',
+                description: 'Exposes the next scheduled point of interest from the itinerary on the 3D map viewport. Use this when the user says "next" or "continue".',
+              },
+              {
+                name: 'viewOnMap',
+                description: 'Syncs the 3D map to a specific location you are discussing. Always call this whenever you mention a tourist attraction or location from the itinerary.',
+                parameters: {
+                  type: 'OBJECT',
+                  properties: {
+                    locationName: { type: 'STRING', description: 'The name of the location to fly the camera to.' }
+                  },
+                  required: ['locationName']
+                }
+              }
+            ]
+          }]
         },
-        stream: userMediaStream,
-        initialContent: initialContent,
         callbacks: {
           onopen: () => {
+            console.log('Live API Connection Opened');
             setConnected(true);
           },
-          onclose: () => reset(),
-          onerror: (e) => {
-            console.error('Live API Error:', e);
-            setError('An error with the live connection occurred.');
+          onclose: (e: any) => {
+            console.log('Live API Connection Closed:', e?.code, e?.reason);
+            reset();
+          },
+          onerror: (e: any) => {
+            console.error('Live API Error event:', e);
+            setError(`API Error: ${e.message || 'Unknown error'}`);
             reset();
           },
           onmessage: (message) => {
+            console.log('Live API Message received:', {
+              serverContent: !!message.serverContent,
+              setupComplete: !!message.setupComplete,
+              toolCall: !!message.toolCall,
+              goAway: !!message.goAway
+            });
+            if (message.toolCall) {
+              const call = (message.toolCall as any).functionCalls?.[0];
+                if (call && call.name === 'goToNextLocation') {
+                  console.log("[use-live-api] goToNextLocation tool called by model!");
+                  const currentTourIndex = useLiveStore.getState().tourIndex;
+                  const nextIndex = currentTourIndex + 1;
+                  useLiveStore.setState({ tourIndex: nextIndex });
+                  console.log("[use-live-api] Advanced tourIndex to:", nextIndex);
+                  
+                  if ((newSession as any).sendToolResponse) {
+                    (newSession as any).sendToolResponse({
+                      functionResponses: [{
+                        name: 'goToNextLocation',
+                        id: call.id,
+                        response: { output: 'Successfully moved to next location.' }
+                      }]
+                    });
+                  }
+                } else if (call && call.name === 'viewOnMap') {
+                  console.log("[use-live-api] viewOnMap tool called by model with locationName:", call.args?.locationName);
+                  const locationName = call.args?.locationName;
+                  const itineraryData = useLiveStore.getState().itineraryData;
+                  if (itineraryData && itineraryData.itinerary) {
+                     let foundDay = -1;
+                     let foundIndex = -1;
+                     for (let day = 0; day < itineraryData.itinerary.length; day++) {
+                        const locs = itineraryData.itinerary[day].locations;
+                        const idx = locs.findIndex(loc => loc.name === locationName);
+                        if (idx >= 0) {
+                           foundDay = day;
+                           foundIndex = idx;
+                           break;
+                        }
+                     }
+                     if (foundIndex >= 0) {
+                        useLiveStore.setState({ activeDay: foundDay, tourIndex: foundIndex });
+                        console.log("[use-live-api] Set activeDay to:", foundDay, "and tourIndex to:", foundIndex);
+                     }
+                  }
+                  
+                  if ((newSession as any).sendToolResponse) {
+                    (newSession as any).sendToolResponse({
+                      functionResponses: [{
+                        name: 'viewOnMap',
+                        id: call.id,
+                        response: { output: `Successfully viewed ${locationName} on map.` }
+                      }]
+                    });
+                  }
+                }
+            }
+
             if (message.serverContent) {
               if ('interrupted' in message.serverContent) {
                 audioStreamerRef.current?.stop();
@@ -168,24 +243,45 @@ export function useLiveAPI() {
                 parts.forEach(part => {
                   if ('text' in part) {
                     currentText += part.text;
-                  } else if (part.inlineData?.mimeType?.startsWith("audio/")) {
+                  } else if (part.inlineData?.mimeType?.startsWith("audio/") && part.inlineData.data) {
                     const audioData = base64ToArrayBuffer(part.inlineData.data);
                     audioStreamerRef.current?.addPCM16(new Uint8Array(audioData));
                   }
                 });
                 appendText(currentText);
               } 
-            } else if (message.clientContent?.turns?.some(t => 'text' in t && t.text)) {
-              setText('');
             }
           },
         },
       });
       setSession(newSession);
 
+      const recorder = new AudioRecorder();
+      recorder.onData = (base64Data) => {
+        if (base64Data) {
+          console.log("[use-live-api] Sending audio chunk (length):", base64Data.length);
+          (newSession as any).sendRealtimeInput({
+            audio: {
+              mimeType: 'audio/pcm;rate=16000',
+              data: base64Data
+            }
+          } as any);
+        }
+      };
+      await recorder.start();
+      audioRecorderRef.current = recorder;
+
+      if (initialContent) {
+        newSession.sendClientContent({ turns: [{ role: 'user', parts: initialContent }] });
+      }
+
     } catch (e: any) {
       console.error('Failed to initialize or connect to Live API:', e);
-      setError(e.message || 'Failed to initialize the API client.');
+      if (e.name === 'NotAllowedError') {
+        setError('Microphone/Camera permission denied. Please check your browser Settings and macOS System Settings.');
+      } else {
+        setError(e.message || 'Failed to initialize the API client.');
+      }
       reset();
     }
   }, [reset, micActive, cameraActive, session, appendText, getTourPrompt, setConnected, setError, setIsSpeaking, setSession, setStream, startTour, setText]);
@@ -205,10 +301,18 @@ export function useLiveAPI() {
 
   const disconnect = useCallback(() => {
     if (session) {
-      session.disconnect();
+      session.close();
       reset();
     }
   }, [session, reset]);
+
+  // Effect to auto-stop recorder when session disconnects
+  useEffect(() => {
+    if (!session && audioRecorderRef.current) {
+        audioRecorderRef.current.stop();
+        audioRecorderRef.current = null;
+    }
+  }, [session]);
 
   // Effect to enable/disable mic track based on `micActive` state
   useEffect(() => {

@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { useLiveAPI } from '@/hooks/use-live-api';
-import type { Part } from '@google/genai';
+import type { Part } from '@google/genai/web';
 import type { ItineraryData } from '@/app/page';
 
 type LiveAPIContextType = {

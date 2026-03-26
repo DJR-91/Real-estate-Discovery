@@ -7,6 +7,8 @@ const mapsClient = new Client({});
 
 const findPlaceToolSchema = z.object({
   query: z.string(),
+  lat: z.number().optional().describe('Latitude for location biasing.'),
+  lng: z.number().optional().describe('Longitude for location biasing.'),
 });
 
 export const findPlaceTool = ai.defineTool(
@@ -26,17 +28,22 @@ export const findPlaceTool = ai.defineTool(
       const { query } = input;
   
       try {
-        const findPlaceResponse = await mapsClient.findPlaceFromText({
-          params: {
-            input: query,
-            inputtype: PlaceInputType.textQuery,
-            fields: ['place_id'],
-            key: process.env.GOOGLE_MAPS_API_KEY!,
-          },
+        const textSearchParams: any = {
+          query: query,
+          key: process.env.GOOGLE_MAPS_API_KEY!,
+        };
+
+        if (input.lat && input.lng) {
+          textSearchParams.location = { lat: input.lat, lng: input.lng };
+          textSearchParams.radius = 8046; // 5 miles in meters
+        }
+
+        const response = await mapsClient.textSearch({
+          params: textSearchParams,
         });
-  
-        const candidate = findPlaceResponse.data.candidates?.[0];
-  
+
+        const candidate = response.data.results?.[0];
+
         if (!candidate || !candidate.place_id) {
           throw new Error(`No place found for query: "${query}"`);
         }
@@ -169,7 +176,7 @@ export const findPlaceTool = ai.defineTool(
       const request: TextSearchRequest = {
         params: {
           query: input.query,
-          type: 'lodging',
+          type: 'lodging' as any,
           key: process.env.GOOGLE_MAPS_API_KEY!,
         },
       };
@@ -195,3 +202,4 @@ export const findPlaceTool = ai.defineTool(
       }
     }
   );
+

@@ -27,7 +27,7 @@ const generateItineraryBannerFlow = ai.defineFlow(
     const prompt = `A cinematic, photorealistic landscape banner for a travel video about "${input.videoTitle}". The image should be a beautiful, wide-angle shot of the main landmark or scenery of ${input.destination}. 8K, hyper-detailed, no people, no text.`;
 
     const { media } = await ai.generate({
-      model: 'googleai/imagen-3.0-generate-002',
+      model: 'googleai/gemini-3.1-flash-image-preview',
       prompt: prompt,
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
