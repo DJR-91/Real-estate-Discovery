@@ -43,3 +43,8 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# temporary files
+tsc_output_*.txt
+.agents/
+scratch/

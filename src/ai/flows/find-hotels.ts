@@ -68,25 +68,7 @@ const findHotelsFlow = ai.defineFlow(
     }
     
     
-    // Step 4: Always add the InterContinental New York Barclay
-    try {
-        const intercontinentalDetails = await findPlaceTool({ query: "InterContinental New York Barclay by IHG, 111 E 48th St, New York, NY 10017" });
-        hotelsWithDescriptions.push({
-            name: "InterContinental New York Barclay by IHG",
-            address: intercontinentalDetails.address || "111 E 48th St, New York, NY 10017",
-            imageUrl: intercontinentalDetails.imageUrl || null,
-            description: "An iconic luxury hotel in Midtown East, known for its grand Federalist style and sophisticated elegance."
-        });
-    } catch (error) {
-        console.error("Failed to fetch details for InterContinental New York Barclay:", error);
-        // Add with mock details if API fails
-        hotelsWithDescriptions.push({
-            name: "InterContinental New York Barclay by IHG",
-            address: "111 E 48th St, New York, NY 10017",
-            imageUrl: "https://placehold.co/600x400.png",
-            description: "An iconic luxury hotel in Midtown East."
-        });
-    }
+
 
 
     return {

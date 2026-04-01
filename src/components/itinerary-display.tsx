@@ -27,6 +27,7 @@ interface ItineraryDisplayProps {
   onFindEvents: (destination: string, videoSummary: string) => void;
   isEventsLoading: boolean;
   onSelectLocation: (place: PointOfInterest) => void;
+  onUpdateItinerary?: (updatedItinerary: ItineraryData["itinerary"]) => void;
 }
 
 const locationIcons: { [key: string]: React.ReactNode } = {
@@ -62,8 +63,40 @@ export function ItineraryDisplay({
     onFindEvents, 
     isEventsLoading,
     onSelectLocation,
+    onUpdateItinerary,
 }: ItineraryDisplayProps) {
   const { video, itinerary, bannerUrl, destination, videoSummary, isBannerLoading, bannerAiHint } = data;
+
+  const [draggedLocation, setDraggedLocation] = React.useState<{ dayIndex: number; locationIndex: number } | null>(null);
+
+  const handleDragStart = (dayIndex: number, locationIndex: number) => {
+    setDraggedLocation({ dayIndex, locationIndex });
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (dayIndex: number, locationIndex: number) => {
+    if (!draggedLocation || !onUpdateItinerary) return;
+    
+    const updatedItinerary = JSON.parse(JSON.stringify(itinerary)); // Deep clone
+    const sourceDay = updatedItinerary[draggedLocation.dayIndex];
+    const targetDay = updatedItinerary[dayIndex];
+    
+    const [movedLocation] = sourceDay.locations.splice(draggedLocation.locationIndex, 1);
+    targetDay.locations.splice(locationIndex, 0, movedLocation);
+    
+    onUpdateItinerary(updatedItinerary);
+    setDraggedLocation(null);
+  };
+
+  const handleDeleteLocation = (dayIndex: number, locationIndex: number) => {
+    if (!onUpdateItinerary) return;
+    const updatedItinerary = JSON.parse(JSON.stringify(itinerary));
+    updatedItinerary[dayIndex].locations.splice(locationIndex, 1);
+    onUpdateItinerary(updatedItinerary);
+  };
 
   const audioUrl = "https://storage.cloud.google.com/jfk-files/outbound.wav?authuser=3";
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
@@ -99,7 +132,7 @@ export function ItineraryDisplay({
   const handleFindHotelsClick = () => {
     const firstLocation = itinerary[0]?.locations[0];
     if (firstLocation) {
-        onFindHotels(firstLocation);
+        onFindHotels(firstLocation as any);
     }
   };
 
@@ -165,7 +198,7 @@ export function ItineraryDisplay({
               </div>
             </div>
             <div className="md:col-span-2 space-y-6">
-              {itinerary.map((day) => (
+              {itinerary.map((day, dayIndex) => (
                 <div key={day.day}>
                   <Badge variant="secondary" className="text-lg py-1 px-4 mb-2">
                     Day {day.day}
@@ -176,26 +209,42 @@ export function ItineraryDisplay({
                   <Separator className="my-2" />
                   <div className="space-y-4">
                     {day.locations.map((location, index) => (
-                      <div key={index} className="flex gap-4 items-start">
+                      <div 
+                        key={index} 
+                        className={`flex gap-4 items-start p-2 transition-all rounded-lg border border-transparent ${draggedLocation?.dayIndex === dayIndex && draggedLocation?.locationIndex === index ? 'opacity-50 border-dashed border-primary bg-muted/50' : 'hover:bg-muted/10'} cursor-move`}
+                        draggable
+                        onDragStart={() => handleDragStart(dayIndex, index)}
+                        onDragOver={handleDragOver}
+                        onDrop={() => handleDrop(dayIndex, index)}
+                      >
                         <div className="flex-shrink-0 mt-1">
                           {getIconForLocation(location.name)}
                         </div>
                         <div className="w-full">
                           <div className="flex justify-between items-center">
                             <p className="font-bold text-lg">{location.name}</p>
-                            {location.address && location.address !== "Address not available" && (
-                                <Button variant="ghost" size="sm" onClick={() => onSelectLocation(location)}>
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View on Map
+                            <div className="flex items-center gap-2">
+
+                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDeleteLocation(dayIndex, index)}>
+                                    Delete
                                 </Button>
-                            )}
+                            </div>
                           </div>
                           <p className="text-muted-foreground">{location.description}</p>
                           {location.address && (
-                             <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                                <MapPin className="h-3 w-3" />
-                                {location.address}
-                             </p>
+                             <div className="text-sm text-gray-500 flex items-center flex-wrap gap-1 mt-1">
+                                <div className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {location.address}
+                                </div>
+                                {(location.distanceText || location.durationText) && (
+                                    <Badge variant="outline" className="text-xs py-0 px-2 h-5 bg-accent/10 text-accent border-accent/20">
+                                        {location.distanceText && `${location.distanceText}`}
+                                        {location.distanceText && location.durationText && " • "}
+                                        {location.durationText && `${location.durationText}`}
+                                    </Badge>
+                                )}
+                             </div>
                           )}
                           {isHotel(location.name) && (
                             <div className="mt-4 flex gap-2">
